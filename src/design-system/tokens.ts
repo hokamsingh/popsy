@@ -1,4 +1,6 @@
 
+import { FONTS, fontTokenName } from "./fonts";
+
 export const defaultTokens: Record<string, string> = {
   "color.primary": "#4f46e5",
   "color.primary-contrast": "#ffffff",
@@ -24,6 +26,7 @@ export const defaultTokens: Record<string, string> = {
   "shadow.lg": "0 24px 64px rgba(15,23,42,.28)",
   "font.body": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
   "font.heading": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+  ...Object.fromEntries(FONTS.map((font) => [fontTokenName(font.id), font.stack])),
 };
 
 const TOKEN_REF = /token:([a-z0-9][a-z0-9.-]*)/g;

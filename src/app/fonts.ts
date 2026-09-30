@@ -1,0 +1,14 @@
+import "@fontsource-variable/inter";
+import "@fontsource-variable/montserrat";
+import "@fontsource-variable/nunito";
+import "@fontsource-variable/dm-sans";
+import "@fontsource-variable/playfair-display";
+import "@fontsource-variable/lora";
+import "@fontsource-variable/oswald";
+import "@fontsource-variable/jetbrains-mono";
+import "@fontsource/poppins/latin-400.css";
+import "@fontsource/poppins/latin-600.css";
+import "@fontsource/poppins/latin-700.css";
+import "@fontsource/bebas-neue/latin-400.css";
+import "@fontsource/pacifico/latin-400.css";
+import "@fontsource/caveat/latin-400.css";

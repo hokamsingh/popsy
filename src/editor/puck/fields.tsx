@@ -8,6 +8,7 @@ import { ICON_NAMES } from "@/schema/components";
 import { ChoiceControl, type Choice } from "../controls/ChoiceControl";
 import { ColorControl } from "../controls/ColorControl";
 import { FieldShell } from "../controls/FieldShell";
+import { FontControl } from "../controls/FontControl";
 import { LengthControl, type SliderRange } from "../controls/LengthControl";
 import { NumberStepper } from "../controls/NumberStepper";
 import { PerDevice } from "../controls/PerDevice";
@@ -144,6 +145,40 @@ export const popupHeightField = (label: string, slider: SliderRange) =>
       <SizeControl label={label} value={value} onChange={onChange} slider={slider} autoLabel="Fit the content" fixedLabel="Set a height" startingSize="400px" />
     </FieldShell>
   ));
+
+export const fontField = (label: string, hint?: string) =>
+  field<string>(label, (value, onChange) => (
+    <FieldShell label={label} hint={hint}>
+      <FontControl label={label} value={value} onChange={onChange} storeAs="reference" unsetLabel="Use the popup's font" />
+    </FieldShell>
+  ));
+
+type Tokens = Record<string, string>;
+
+const THEME_FONTS = [
+  { token: "font.heading", label: "Heading font" },
+  { token: "font.body", label: "Body font" },
+] as const;
+
+export const themeFontsField = () =>
+  field<Tokens>("Fonts for the whole popup", (value, onChange) => {
+    const tokens = value ?? {};
+    const setFont = (token: string, font: string | undefined) => {
+      const next = { ...tokens };
+      if (font === undefined) delete next[token];
+      else next[token] = font;
+      onChange(Object.keys(next).length ? next : undefined);
+    };
+    return (
+      <>
+        {THEME_FONTS.map(({ token, label }) => (
+          <FieldShell key={token} label={label} hint={token === "font.body" ? "Used for everything that isn't a heading." : "Used by headings and subheadings."}>
+            <FontControl label={label} value={tokens[token]} onChange={(font) => setFont(token, font)} storeAs="stack" unsetLabel="Default" />
+          </FieldShell>
+        ))}
+      </>
+    );
+  });
 
 export const radiusField = (label: string) =>
   field<string>(label, (value, onChange) => (

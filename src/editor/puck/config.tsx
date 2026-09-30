@@ -9,7 +9,7 @@ import { COMPONENTS } from "@/schema/components";
 import { settingsSchema, type PopupSettings } from "@/schema/popup";
 import type { Choice } from "../controls/ChoiceControl";
 import {
-  actionField, blurField, choiceField, colorField, iconField, lengthField, numberField, popupHeightField, radiusField, styleField, textField, toggleField,
+  actionField, blurField, choiceField, colorField, fontField, iconField, lengthField, numberField, popupHeightField, radiusField, styleField, textField, themeFontsField, toggleField,
 } from "./fields";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -236,7 +236,7 @@ const components: Record<string, ComponentConfig> = {
       letterSpacing: lengthField("Letter spacing", { slider: { min: -2, max: 12 }, units: ["px", "em"] }),
       decoration: choiceField("Decoration", DECORATION_CHOICES, { unsetLabel: "None" }),
       tag: choiceField("Meaning for search engines and screen readers", TEXT_TAG_CHOICES, { unsetLabel: "Automatic" }),
-      fontFamily: textField("Font (advanced)", { hint: "A font name installed on the page, e.g. Georgia." }),
+      fontFamily: fontField("Font"),
     },
     adapt(Text),
     { content: "Your text here", variant: "body" },
@@ -338,6 +338,7 @@ const rootFields: Fields = {
   title: textField("Title for screen readers", { hint: "Announced when the popup opens. Not shown on screen." }),
   width: lengthField("Width", { slider: { min: 240, max: 1000, step: 10 }, units: ["px", "%"] }),
   height: popupHeightField("Height", { min: 120, max: 900, step: 10 }),
+  tokens: themeFontsField(),
   position: choiceField("Where it appears", POSITION_CHOICES),
   background: colorField("Background color"),
   radius: radiusField("Corner roundness"),
