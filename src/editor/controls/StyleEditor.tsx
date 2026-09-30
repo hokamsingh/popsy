@@ -10,7 +10,8 @@ import { LengthControl, type SliderRange } from "./LengthControl";
 import { NumberStepper } from "./NumberStepper";
 import { PerDevice } from "./PerDevice";
 import { RadiusControl } from "./RadiusControl";
-import { SidesControl } from "./SidesControl";
+import { SpacingControl } from "./SpacingControl";
+import { SizeControl } from "./SizeControl";
 import { ToggleControl } from "./ToggleControl";
 import { formatBlur, formatBorder, parseBlur, parseBorder, BORDER_STYLES, type Border, type BorderStyle } from "./values";
 import styles from "./controls.module.css";
@@ -98,7 +99,7 @@ function LengthRow({
   slider,
   style,
   update,
-}: SectionProps & { field: "width" | "height" | "minHeight" | "maxWidth"; label: string; hint?: string; slider?: SliderRange }) {
+}: SectionProps & { field: "minHeight" | "maxWidth"; label: string; hint?: string; slider?: SliderRange }) {
   return (
     <FieldShell label={label} hint={hint}>
       <PerDevice value={style[field]} onChange={(next) => update(field, next)}>
@@ -108,11 +109,30 @@ function LengthRow({
   );
 }
 
+function SizeRow({
+  field,
+  label,
+  autoLabel,
+  fixedLabel,
+  startingSize,
+  slider,
+  style,
+  update,
+}: SectionProps & { field: "width" | "height"; label: string; autoLabel: string; fixedLabel: string; startingSize: string; slider: SliderRange }) {
+  return (
+    <FieldShell label={label}>
+      <PerDevice value={style[field]} onChange={(next) => update(field, next)}>
+        {(device) => <SizeControl label={label} autoLabel={autoLabel} fixedLabel={fixedLabel} startingSize={startingSize} slider={slider} {...device} />}
+      </PerDevice>
+    </FieldShell>
+  );
+}
+
 function SidesRow({ field, label, hint, style, update }: SectionProps & { field: "padding" | "margin"; label: string; hint: string }) {
   return (
     <FieldShell label={label} hint={hint}>
       <PerDevice value={style[field]} onChange={(next) => update(field, next)}>
-        {(device) => <SidesControl label={label} {...device} />}
+        {(device) => <SpacingControl label={label} value={device.value} onChange={device.onChange} />}
       </PerDevice>
     </FieldShell>
   );
@@ -121,8 +141,8 @@ function SidesRow({ field, label, hint, style, update }: SectionProps & { field:
 function SpacingSection(props: SectionProps) {
   return (
     <Section title="Spacing" defaultOpen>
-      <SidesRow {...props} field="padding" label="Inner spacing" hint="Breathing room between the edge and what's inside." />
-      <SidesRow {...props} field="margin" label="Outer spacing" hint="Empty space around it, pushing neighbours away." />
+      <SidesRow {...props} field="padding" label="Space inside" hint="Gap between the edge of this block and what it contains." />
+      <SidesRow {...props} field="margin" label="Space outside" hint="Gap between this block and the blocks next to it." />
     </Section>
   );
 }
@@ -130,8 +150,8 @@ function SpacingSection(props: SectionProps) {
 function SizeSection(props: SectionProps) {
   return (
     <Section title="Size">
-      <LengthRow {...props} field="width" label="Width" slider={{ min: 40, max: 900, step: 10 }} />
-      <LengthRow {...props} field="height" label="Height" slider={{ min: 20, max: 800, step: 10 }} />
+      <SizeRow {...props} field="width" label="Width" autoLabel="Automatic" fixedLabel="Set a width" startingSize="300px" slider={{ min: 40, max: 900, step: 10 }} />
+      <SizeRow {...props} field="height" label="Height" autoLabel="Fit the content" fixedLabel="Set a height" startingSize="200px" slider={{ min: 20, max: 800, step: 10 }} />
       <LengthRow {...props} field="minHeight" label="Minimum height" hint="It never gets shorter than this." slider={{ min: 0, max: 600, step: 10 }} />
       <LengthRow {...props} field="maxWidth" label="Maximum width" hint="It never gets wider than this." slider={{ min: 100, max: 1000, step: 10 }} />
     </Section>

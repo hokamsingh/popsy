@@ -12,6 +12,7 @@ import { LengthControl, type SliderRange } from "../controls/LengthControl";
 import { NumberStepper } from "../controls/NumberStepper";
 import { PerDevice } from "../controls/PerDevice";
 import { RadiusControl } from "../controls/RadiusControl";
+import { SizeControl } from "../controls/SizeControl";
 import { StyleEditor } from "../controls/StyleEditor";
 import { ToggleControl } from "../controls/ToggleControl";
 import { formatBlur, parseBlur, type LengthUnit } from "../controls/values";
@@ -134,6 +135,13 @@ export const textField = (label: string, { hint, placeholder, multiline }: TextF
       ) : (
         <input className={styles.text} aria-label={label} placeholder={placeholder} value={value ?? ""} onChange={(event) => onChange(event.target.value || undefined)} />
       )}
+    </FieldShell>
+  ));
+
+export const popupHeightField = (label: string, slider: SliderRange) =>
+  field<string>(label, (value, onChange) => (
+    <FieldShell label={label}>
+      <SizeControl label={label} value={value} onChange={onChange} slider={slider} autoLabel="Fit the content" fixedLabel="Set a height" startingSize="400px" />
     </FieldShell>
   ));
 

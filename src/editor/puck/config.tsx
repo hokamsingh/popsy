@@ -9,7 +9,7 @@ import { COMPONENTS } from "@/schema/components";
 import { settingsSchema, type PopupSettings } from "@/schema/popup";
 import type { Choice } from "../controls/ChoiceControl";
 import {
-  actionField, blurField, choiceField, colorField, iconField, lengthField, numberField, radiusField, styleField, textField, toggleField,
+  actionField, blurField, choiceField, colorField, iconField, lengthField, numberField, popupHeightField, radiusField, styleField, textField, toggleField,
 } from "./fields";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -337,7 +337,7 @@ const rootFields: Fields = {
   name: textField("Popup name", { hint: "Only you see this." }),
   title: textField("Title for screen readers", { hint: "Announced when the popup opens. Not shown on screen." }),
   width: lengthField("Width", { slider: { min: 240, max: 1000, step: 10 }, units: ["px", "%"] }),
-  height: lengthField("Height", { slider: { min: 120, max: 900, step: 10 }, hint: "Leave empty to fit the content." }),
+  height: popupHeightField("Height", { min: 120, max: 900, step: 10 }),
   position: choiceField("Where it appears", POSITION_CHOICES),
   background: colorField("Background color"),
   radius: radiusField("Corner roundness"),

@@ -29,8 +29,28 @@ interface PerDeviceProps<T> {
 
 export function PerDevice<T>({ value, onChange, children }: PerDeviceProps<T>) {
   const [device, setDevice] = useState<Breakpoint>("desktop");
+  const [askedForDevices, setAskedForDevices] = useState(false);
   const values = expandResponsive(value);
+  const differsByDevice = values.tablet !== undefined || values.mobile !== undefined;
+  const showDevices = askedForDevices || differsByDevice;
   const own = values[device];
+
+  const field = children({
+    value: own,
+    inherited: inheritedValue(value, device),
+    onChange: (next) => onChange(withBreakpointValue(value, device, next)),
+  });
+
+  if (!showDevices) {
+    return (
+      <div style={{ display: "grid", gap: 8 }}>
+        {field}
+        <button type="button" className={`${styles.linkButton} ${styles.addDeviceLink}`} onClick={() => setAskedForDevices(true)}>
+          Different on tablet or mobile?
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "grid", gap: 8 }}>
@@ -51,11 +71,7 @@ export function PerDevice<T>({ value, onChange, children }: PerDeviceProps<T>) {
         ))}
       </div>
 
-      {children({
-        value: own,
-        inherited: inheritedValue(value, device),
-        onChange: (next) => onChange(withBreakpointValue(value, device, next)),
-      })}
+      {field}
 
       {device === "desktop" ? null : own === undefined ? (
         <p className={styles.hint}>Not changed here, so it matches {device === "tablet" ? "Desktop" : "Tablet or Desktop"}.</p>

@@ -242,34 +242,30 @@
   box-shadow: 0 0 0 2px #4f46e5;
 }
 
-.sides {
+.sidesGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-areas:
-    ". top ."
-    "left link right"
-    ". bottom .";
-  gap: 6px;
-  align-items: center;
-  justify-items: center;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .sideLabel {
   display: grid;
-  gap: 2px;
-  justify-items: center;
-  font-size: 11px;
-  color: #6b7280;
+  gap: 4px;
+  font-size: 12px;
+  color: #4b5563;
 }
 
-.sideInput {
-  width: 56px;
-  padding: 6px 4px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  text-align: center;
-  font: inherit;
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.addDeviceLink {
+  justify-self: start;
 }
 
 .section {
