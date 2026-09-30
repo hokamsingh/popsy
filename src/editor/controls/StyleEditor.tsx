@@ -9,6 +9,7 @@ import { FieldShell } from "./FieldShell";
 import { LengthControl, type SliderRange } from "./LengthControl";
 import { NumberStepper } from "./NumberStepper";
 import { PerDevice } from "./PerDevice";
+import { RadiusControl } from "./RadiusControl";
 import { SidesControl } from "./SidesControl";
 import { ToggleControl } from "./ToggleControl";
 import { formatBlur, formatBorder, parseBlur, parseBorder, BORDER_STYLES, type Border, type BorderStyle } from "./values";
@@ -223,8 +224,8 @@ function BorderSection({ style, update }: SectionProps) {
           <ColorControl label="Border color" value={border.color} onChange={(color) => setBorder({ color: color ?? "token:color.border" })} />
         </FieldShell>
       )}
-      <FieldShell label="Corner roundness" hint="0 is square. Higher is rounder.">
-        <LengthControl label="Corner roundness" value={plain(style.radius)} onChange={(next) => update("radius", next)} slider={{ min: 0, max: 48 }} units={["px", "%"]} />
+      <FieldShell label="Corner roundness">
+        <RadiusControl label="Corner roundness" value={plain(style.radius)} onChange={(next) => update("radius", next)} unsetLabel="Default" />
       </FieldShell>
       <FieldShell label="Shadow">
         <ChoiceControl

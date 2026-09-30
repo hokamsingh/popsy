@@ -11,6 +11,7 @@ import { FieldShell } from "../controls/FieldShell";
 import { LengthControl, type SliderRange } from "../controls/LengthControl";
 import { NumberStepper } from "../controls/NumberStepper";
 import { PerDevice } from "../controls/PerDevice";
+import { RadiusControl } from "../controls/RadiusControl";
 import { StyleEditor } from "../controls/StyleEditor";
 import { ToggleControl } from "../controls/ToggleControl";
 import { formatBlur, parseBlur, type LengthUnit } from "../controls/values";
@@ -133,6 +134,13 @@ export const textField = (label: string, { hint, placeholder, multiline }: TextF
       ) : (
         <input className={styles.text} aria-label={label} placeholder={placeholder} value={value ?? ""} onChange={(event) => onChange(event.target.value || undefined)} />
       )}
+    </FieldShell>
+  ));
+
+export const radiusField = (label: string) =>
+  field<string>(label, (value, onChange) => (
+    <FieldShell label={label}>
+      <RadiusControl label={label} value={value} onChange={onChange} />
     </FieldShell>
   ));
 

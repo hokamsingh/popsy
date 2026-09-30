@@ -9,7 +9,7 @@ import { COMPONENTS } from "@/schema/components";
 import { settingsSchema, type PopupSettings } from "@/schema/popup";
 import type { Choice } from "../controls/ChoiceControl";
 import {
-  actionField, blurField, choiceField, colorField, iconField, lengthField, numberField, styleField, textField, toggleField,
+  actionField, blurField, choiceField, colorField, iconField, lengthField, numberField, radiusField, styleField, textField, toggleField,
 } from "./fields";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -340,7 +340,7 @@ const rootFields: Fields = {
   height: lengthField("Height", { slider: { min: 120, max: 900, step: 10 }, hint: "Leave empty to fit the content." }),
   position: choiceField("Where it appears", POSITION_CHOICES),
   background: colorField("Background color"),
-  radius: lengthField("Corner roundness", { slider: { min: 0, max: 48 }, units: ["px"] }),
+  radius: radiusField("Corner roundness"),
   shadow: choiceField("Shadow", SHADOW_CHOICES),
   animation: choiceField("Entrance", ANIMATION_CHOICES),
   overlay: toggleField("Dim the page behind", "Turn off to keep the page usable while the popup shows."),
