@@ -1,7 +1,7 @@
 "use client";
 import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/no-external.css";
-import { Download, Eye, Home, Upload } from "lucide-react";
+import { Download, Eye, FilePlus, Home, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { fromPuck, toPuck, type PuckData } from "@/editor/adapters/puck";
@@ -9,6 +9,7 @@ import { puckConfig } from "@/editor/puck/config";
 import { loadPopup, savePopup } from "@/editor/storage";
 import { parsePopup } from "@/schema/popup";
 import { BENCHMARKS } from "@/templates/benchmarks";
+import { createBlankPopup } from "@/templates/blank";
 
 const SAVE_DELAY_MS = 500;
 const TOAST_MS = 3500;
@@ -78,6 +79,9 @@ function HeaderTools({ data, onLoad, errors, savedAt, children }: HeaderToolsPro
       ) : (
         <span className="tool-status">{savedAt ? `Saved ${savedAt}` : "Not saved yet"}</span>
       )}
+      <button type="button" className="tool" onClick={() => replaceWith(toPuck(createBlankPopup()))}>
+        <FilePlus size={15} aria-hidden /> New
+      </button>
       <select className="tool" aria-label="Load benchmark" value="" onChange={(e) => e.target.value && replaceWith(toPuck(BENCHMARKS[e.target.value]()))}>
         <option value="">Load example…</option>
         {Object.keys(BENCHMARKS).map((id) => (
