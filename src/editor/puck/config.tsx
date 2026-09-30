@@ -5,53 +5,154 @@ import { Badge, Button, Icon, Image, RichText, Text, Video } from "@/components/
 import { Container, Divider, Flex, Grid, Section, Spacer, Stack } from "@/components/layout";
 import { PopupShell } from "@/components/popup/PopupShell";
 import { RuntimeContext } from "@/runtime/context";
+import { COMPONENTS } from "@/schema/components";
+import { settingsSchema, type PopupSettings } from "@/schema/popup";
+import type { Choice } from "../controls/ChoiceControl";
 import {
-  ALIGN_VALUES, BADGE_SIZES, BADGE_VARIANTS, BUTTON_SIZES, BUTTON_VARIANTS, COMPONENTS, DECORATIONS,
-  FLEX_DIRECTIONS, ICON_POSITIONS, JUSTIFY_VALUES, LINE_STYLES, LOADING_MODES, OBJECT_FITS,
-  ORIENTATIONS, TEXT_TAGS, TEXT_VARIANTS, VIDEO_OBJECT_FITS,
-} from "@/schema/components";
-import { TEXT_ALIGNS, OVERFLOWS, POSITION_MODES } from "@/design-system/styles";
-import { ANIMATIONS, POSITIONS, settingsSchema, type PopupSettings } from "@/schema/popup";
-import { actionField, boolField, iconField, responsiveField, responsiveToggle, selectField } from "./fields";
+  actionField, blurField, choiceField, colorField, iconField, lengthField, numberField, styleField, textField, toggleField,
+} from "./fields";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Props = Record<string, any>;
 
-const len = (label: string, placeholder?: string) => responsiveField(label, { placeholder });
+const ALIGN_CHOICES: Choice<string>[] = [
+  { value: "start", label: "Start" },
+  { value: "center", label: "Center" },
+  { value: "end", label: "End" },
+  { value: "stretch", label: "Stretch" },
+];
+
+const SPREAD_CHOICES: Choice<string>[] = [
+  { value: "start", label: "Start" },
+  { value: "center", label: "Center" },
+  { value: "end", label: "End" },
+  { value: "between", label: "Space between" },
+  { value: "around", label: "Space around" },
+];
+
+const DIRECTION_CHOICES: Choice<string>[] = [
+  { value: "row", label: "Side by side" },
+  { value: "column", label: "Stacked" },
+  { value: "row-reverse", label: "Side by side, reversed" },
+  { value: "column-reverse", label: "Stacked, reversed" },
+];
+
+const TEXT_STYLE_CHOICES: Choice<string>[] = [
+  { value: "heading", label: "Heading" },
+  { value: "subheading", label: "Subheading" },
+  { value: "body", label: "Body text" },
+  { value: "caption", label: "Small caption" },
+  { value: "label", label: "Label" },
+];
+
+const TEXT_TAG_CHOICES: Choice<string>[] = [
+  { value: "h1", label: "Main heading (H1)" },
+  { value: "h2", label: "Heading (H2)" },
+  { value: "h3", label: "Subheading (H3)" },
+  { value: "h4", label: "Small heading (H4)" },
+  { value: "p", label: "Paragraph" },
+  { value: "span", label: "Inline text" },
+];
+
+const FONT_WEIGHT_CHOICES: Choice<string>[] = [
+  { value: "400", label: "Normal" },
+  { value: "500", label: "Medium" },
+  { value: "600", label: "Semibold" },
+  { value: "700", label: "Bold" },
+];
+
+const TEXT_ALIGN_CHOICES: Choice<string>[] = [
+  { value: "left", label: "Left" },
+  { value: "center", label: "Center" },
+  { value: "right", label: "Right" },
+  { value: "justify", label: "Justify" },
+];
+
+const DECORATION_CHOICES: Choice<string>[] = [
+  { value: "underline", label: "Underline" },
+  { value: "line-through", label: "Strikethrough" },
+];
+
+const IMAGE_FIT_CHOICES: Choice<string>[] = [
+  { value: "cover", label: "Fill the space" },
+  { value: "contain", label: "Fit inside" },
+  { value: "fill", label: "Stretch" },
+  { value: "none", label: "Original size" },
+  { value: "scale-down", label: "Shrink only" },
+];
+
+const VIDEO_FIT_CHOICES: Choice<string>[] = IMAGE_FIT_CHOICES.slice(0, 3);
+
+const LOADING_CHOICES: Choice<string>[] = [
+  { value: "lazy", label: "When scrolled into view" },
+  { value: "eager", label: "Immediately" },
+];
+
+const BUTTON_LOOK_CHOICES: Choice<string>[] = [
+  { value: "solid", label: "Filled" },
+  { value: "outline", label: "Outline" },
+  { value: "ghost", label: "Text only" },
+  { value: "link", label: "Link" },
+];
+
+const BUTTON_SIZE_CHOICES: Choice<string>[] = [
+  { value: "sm", label: "Small" },
+  { value: "md", label: "Medium" },
+  { value: "lg", label: "Large" },
+];
+
+const BADGE_LOOK_CHOICES: Choice<string>[] = [
+  { value: "soft", label: "Soft" },
+  { value: "solid", label: "Filled" },
+  { value: "outline", label: "Outline" },
+];
+
+const SIDE_CHOICES: Choice<string>[] = [
+  { value: "left", label: "Before the text" },
+  { value: "right", label: "After the text" },
+];
+
+const DIVIDER_STYLE_CHOICES: Choice<string>[] = [
+  { value: "solid", label: "Solid" },
+  { value: "dashed", label: "Dashed" },
+  { value: "dotted", label: "Dotted" },
+];
+
+const ORIENTATION_CHOICES: Choice<string>[] = [
+  { value: "horizontal", label: "Horizontal" },
+  { value: "vertical", label: "Vertical" },
+];
+
+const POSITION_CHOICES: Choice<string>[] = [
+  { value: "center", label: "Center" },
+  { value: "top", label: "Top" },
+  { value: "bottom", label: "Bottom" },
+  { value: "left", label: "Left" },
+  { value: "right", label: "Right" },
+  { value: "top-left", label: "Top left" },
+  { value: "top-right", label: "Top right" },
+  { value: "bottom-left", label: "Bottom left" },
+  { value: "bottom-right", label: "Bottom right" },
+];
+
+const ANIMATION_CHOICES: Choice<string>[] = [
+  { value: "none", label: "None" },
+  { value: "fade", label: "Fade in" },
+  { value: "scale", label: "Pop in" },
+  { value: "slide-up", label: "Slide up" },
+  { value: "slide-down", label: "Slide down" },
+];
+
+const SHADOW_CHOICES: Choice<string>[] = [
+  { value: "none", label: "None" },
+  { value: "token:shadow.sm", label: "Soft" },
+  { value: "token:shadow.md", label: "Medium" },
+  { value: "token:shadow.lg", label: "Strong" },
+];
+
+const gap = lengthField("Space between items", { perDevice: true, slider: { min: 0, max: 64 }, hint: "The gap between each item." });
+
 const slot = { type: "slot" } as const;
-
-const styleFields: Fields = {
-  style: {
-    type: "object",
-    label: "Style",
-    objectFields: {
-      padding: len("Padding", "e.g. 24px or 8px 16px"),
-      margin: len("Margin"),
-      width: len("Width", "e.g. 100% or 240px"),
-      height: len("Height"),
-      minHeight: len("Min height"),
-      maxWidth: len("Max width"),
-      color: len("Text color", "e.g. #111 or token:color.text"),
-      textAlign: responsiveField("Text align", { options: TEXT_ALIGNS }),
-      background: len("Background color", "e.g. #fff or token:color.surface"),
-      gradient: len("Gradient", "linear-gradient(135deg, #6366f1, #ec4899)"),
-      backgroundImage: { type: "text", label: "Background image URL" },
-      backgroundSize: len("Background size", "cover"),
-      backgroundPosition: len("Background position", "center"),
-      border: len("Border", "1px solid #e2e8f0"),
-      radius: len("Radius", "e.g. 12px or token:radius.md"),
-      shadow: len("Shadow", "token:shadow.md"),
-      backdropFilter: len("Backdrop blur (glass)", "blur(12px) saturate(1.4)"),
-      opacity: { type: "number", label: "Opacity (0–1)", min: 0, max: 1 },
-      overflow: responsiveField("Overflow", { options: OVERFLOWS }),
-      position: responsiveField("Position", { options: POSITION_MODES }),
-      hidden: responsiveToggle("Hidden"),
-    },
-  },
-};
-
-const alignField = responsiveField("Align", { options: ALIGN_VALUES });
-const justifyField = responsiveField("Justify", { options: JUSTIFY_VALUES });
 
 function adapt(Comp: (p: any) => ReactNode): ComponentConfig["render"] {
   const Render = ({ children, ...props }: Props) => <Comp {...props} slot={children} />;
@@ -59,146 +160,169 @@ function adapt(Comp: (p: any) => ReactNode): ComponentConfig["render"] {
   return Render;
 }
 
-const component = (
-  fields: Fields,
-  render: ComponentConfig["render"],
-  defaultProps: Props,
-  label?: string,
-): ComponentConfig => ({
+const component = (label: string, fields: Fields, render: ComponentConfig["render"], defaultProps: Props): ComponentConfig => ({
   label,
-  fields: { ...fields, ...styleFields },
+  fields: { ...fields, style: styleField() },
   defaultProps: { style: {}, ...defaultProps },
   render,
 });
 
 const components: Record<string, ComponentConfig> = {
-  Section: component({ children: slot }, adapt(Section), { style: { padding: "32px" } }),
-  Container: component({ children: slot }, adapt(Container), { style: { maxWidth: "100%" } }),
+  Section: component("Section", { children: slot }, adapt(Section), { style: { padding: "32px" } }),
+  Container: component("Container", { children: slot }, adapt(Container), { style: { maxWidth: "100%" } }),
   Stack: component(
-    { gap: len("Gap", "e.g. 16px"), align: alignField, justify: justifyField, children: slot },
+    "Stack (top to bottom)",
+    {
+      gap,
+      align: choiceField("Left / right alignment", ALIGN_CHOICES, { perDevice: true, hint: "Where items sit across the width." }),
+      justify: choiceField("Up / down alignment", SPREAD_CHOICES, { perDevice: true, hint: "Only matters when the stack is taller than its items." }),
+      children: slot,
+    },
     adapt(Stack),
     { gap: "16px", align: "stretch" },
   ),
   Flex: component(
+    "Row (side by side)",
     {
-      direction: responsiveField("Direction", { options: FLEX_DIRECTIONS }),
-      wrap: responsiveToggle("Wrap"),
-      gap: len("Gap"),
-      align: alignField,
-      justify: justifyField,
+      direction: choiceField("Direction", DIRECTION_CHOICES, { perDevice: true, hint: "Switch to Stacked on mobile to stop items getting squeezed." }),
+      wrap: toggleField("Wrap onto new lines", "Items move to the next line when there isn't room."),
+      gap,
+      align: choiceField("Line up items", ALIGN_CHOICES, { perDevice: true, hint: "Across the direction of travel, e.g. top or bottom in a row." }),
+      justify: choiceField("Spread items", SPREAD_CHOICES, { perDevice: true, hint: "Along the direction of travel, e.g. left or right in a row." }),
       children: slot,
     },
     adapt(Flex),
     { direction: "row", gap: "16px", align: "center" },
   ),
   Grid: component(
+    "Grid (columns)",
     {
-      columns: len("Columns", "3 or 1fr 2fr"),
-      rows: len("Rows"),
-      gap: len("Gap"),
-      align: alignField,
-      justify: justifyField,
+      columns: numberField("Number of columns", { perDevice: true, min: 1, max: 6, hint: "Try 2 on desktop and 1 on mobile." }),
+      gap,
+      align: choiceField("Line up items", ALIGN_CHOICES, { perDevice: true }),
+      justify: choiceField("Spread items", ALIGN_CHOICES, { perDevice: true }),
       children: slot,
     },
     adapt(Grid),
     { columns: { desktop: "2", mobile: "1" }, gap: "16px" },
   ),
-  Spacer: component({ height: len("Height", "e.g. 24px") }, adapt(Spacer), { height: "24px" }),
+  Spacer: component(
+    "Space",
+    { height: lengthField("Height", { perDevice: true, slider: { min: 4, max: 200 } }) },
+    adapt(Spacer),
+    { height: "24px" },
+  ),
   Divider: component(
+    "Line",
     {
-      orientation: selectField("Orientation", ORIENTATIONS),
-      thickness: { type: "text", label: "Thickness" },
-      style: selectField("Line style", LINE_STYLES),
-      color: { type: "text", label: "Color" },
-      spacing: len("Spacing"),
+      orientation: choiceField("Direction", ORIENTATION_CHOICES),
+      thickness: lengthField("Thickness", { slider: { min: 1, max: 12 }, units: ["px"] }),
+      style: choiceField("Line style", DIVIDER_STYLE_CHOICES),
+      color: colorField("Color"),
+      spacing: lengthField("Space above and below", { perDevice: true, slider: { min: 0, max: 64 } }),
     },
     adapt(Divider),
     { orientation: "horizontal", thickness: "1px", style: "solid", color: "token:color.border" },
   ),
   Text: component(
+    "Text",
     {
-      content: { type: "textarea", label: "Content" },
-      variant: selectField("Variant", TEXT_VARIANTS),
-      tag: selectField("HTML tag", TEXT_TAGS, true),
-      fontFamily: { type: "text", label: "Font family" },
-      fontSize: len("Font size"),
-      fontWeight: len("Font weight", "400–900"),
-      lineHeight: len("Line height"),
-      letterSpacing: len("Letter spacing"),
-      align: responsiveField("Alignment", { options: TEXT_ALIGNS }),
-      decoration: selectField("Decoration", DECORATIONS, true),
+      content: textField("Words", { multiline: true }),
+      variant: choiceField("Text style", TEXT_STYLE_CHOICES, { hint: "Sets a sensible size and weight. Fine-tune below." }),
+      fontSize: lengthField("Text size", { perDevice: true, slider: { min: 10, max: 96 }, units: ["px", "rem"], hint: "Leave empty to use the text style's size." }),
+      fontWeight: choiceField("Weight", FONT_WEIGHT_CHOICES, { unsetLabel: "Default", perDevice: true }),
+      align: choiceField("Alignment", TEXT_ALIGN_CHOICES, { perDevice: true, unsetLabel: "Default" }),
+      lineHeight: numberField("Line spacing", { step: 0.1, min: 0.8, max: 3, hint: "1.5 is comfortable for paragraphs." }),
+      letterSpacing: lengthField("Letter spacing", { slider: { min: -2, max: 12 }, units: ["px", "em"] }),
+      decoration: choiceField("Decoration", DECORATION_CHOICES, { unsetLabel: "None" }),
+      tag: choiceField("Meaning for search engines and screen readers", TEXT_TAG_CHOICES, { unsetLabel: "Automatic" }),
+      fontFamily: textField("Font (advanced)", { hint: "A font name installed on the page, e.g. Georgia." }),
     },
     adapt(Text),
     { content: "Your text here", variant: "body" },
   ),
   RichText: component(
-    { content: { type: "textarea", label: "Content (**bold** *italic* __underline__ [link](url), - lists)" } },
+    "Rich Text",
+    {
+      content: textField("Words", {
+        multiline: true,
+        hint: "**bold**, *italic*, __underline__, [link text](https://…). Start a line with - for a bullet list.",
+      }),
+    },
     adapt(RichText),
     { content: "Write **rich** text with [links](https://example.com)." },
-    "Rich Text",
   ),
   Image: component(
+    "Image",
     {
-      src: { type: "text", label: "Image URL" },
-      alt: { type: "text", label: "Alt text" },
-      objectFit: selectField("Object fit", OBJECT_FITS, true),
-      objectPosition: { type: "text", label: "Object position" },
-      loading: selectField("Loading", LOADING_MODES),
+      src: textField("Image link", { placeholder: "https://example.com/photo.jpg", hint: "Paste the web address of a picture." }),
+      alt: textField("Description", { hint: "Describe the image for people who can't see it. Leave empty if it's only decoration." }),
+      objectFit: choiceField("How it fills the space", IMAGE_FIT_CHOICES, { unsetLabel: "Default" }),
+      loading: choiceField("Load", LOADING_CHOICES),
       action: actionField(),
     },
     adapt(Image),
-    {
-      src: "https://placehold.co/480x240/e2e8f0/64748b?text=Image",
-      alt: "",
-      loading: "lazy",
-      style: { width: "100%" },
-    },
+    { src: "https://placehold.co/480x240/e2e8f0/64748b?text=Image", alt: "", loading: "lazy", style: { width: "100%" } },
   ),
   Video: component(
+    "Video",
     {
-      src: { type: "text", label: "Video URL" },
-      poster: { type: "text", label: "Poster URL" },
-      controls: boolField("Controls"),
-      autoplay: boolField("Autoplay (muted only)"),
-      muted: boolField("Muted"),
-      loop: boolField("Loop"),
-      aspectRatio: { type: "text", label: "Aspect ratio (16 / 9)" },
-      objectFit: selectField("Object fit", VIDEO_OBJECT_FITS, true),
+      src: textField("Video link", { placeholder: "https://example.com/video.mp4" }),
+      poster: textField("Cover image link", { hint: "Shown before the video plays." }),
+      controls: toggleField("Show play controls"),
+      autoplay: toggleField("Start automatically", "Browsers only allow this when the video is muted."),
+      muted: toggleField("Muted"),
+      loop: toggleField("Repeat"),
+      aspectRatio: textField("Shape", { placeholder: "16 / 9", hint: "Width / height, e.g. 16 / 9 or 1 / 1." }),
+      objectFit: choiceField("How it fills the space", VIDEO_FIT_CHOICES, { unsetLabel: "Default" }),
     },
     adapt(Video),
-    { src: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm", controls: true, autoplay: false, muted: false, loop: false, aspectRatio: "16 / 9" },
+    {
+      src: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm",
+      controls: true,
+      autoplay: false,
+      muted: false,
+      loop: false,
+      aspectRatio: "16 / 9",
+    },
   ),
   Icon: component(
+    "Icon",
     {
-      name: iconField("Icon"),
-      size: len("Size", "24px"),
-      color: { type: "text", label: "Color" },
-      rotation: { type: "number", label: "Rotation (deg)" },
-      label: { type: "text", label: "Accessible label" },
+      name: iconField("Icon", { required: true }),
+      size: lengthField("Size", { perDevice: true, slider: { min: 12, max: 96 } }),
+      color: colorField("Color"),
+      rotation: numberField("Rotate (degrees)", { min: -360, max: 360, step: 15 }),
+      label: textField("Description", { hint: "Only needed if the icon carries meaning on its own." }),
     },
     adapt(Icon),
     { name: "star", size: "24px" },
   ),
   Button: component(
+    "Button",
     {
-      label: { type: "text", label: "Label" },
-      variant: selectField("Variant", BUTTON_VARIANTS),
-      size: selectField("Size", BUTTON_SIZES),
-      icon: iconField(),
-      iconPosition: selectField("Icon position", ICON_POSITIONS),
-      fullWidth: boolField("Full width"),
-      disabled: boolField("Disabled"),
-      action: actionField(),
+      label: textField("Button text"),
+      action: actionField("When clicked"),
+      variant: choiceField("Look", BUTTON_LOOK_CHOICES),
+      size: choiceField("Size", BUTTON_SIZE_CHOICES),
+      icon: iconField("Icon"),
+      iconPosition: choiceField("Icon position", SIDE_CHOICES),
+      fullWidth: toggleField("Stretch to full width"),
+      disabled: toggleField("Disabled", "Greyed out and not clickable."),
     },
     adapt(Button),
     { label: "Continue", variant: "solid", size: "md", iconPosition: "left", fullWidth: false, disabled: false, action: { type: "dismiss" } },
   ),
   Badge: component(
+    "Badge",
     {
-      text: { type: "text", label: "Text" },
-      icon: iconField(),
-      variant: selectField("Variant", BADGE_VARIANTS),
-      size: selectField("Size", BADGE_SIZES),
+      text: textField("Text"),
+      icon: iconField("Icon"),
+      variant: choiceField("Look", BADGE_LOOK_CHOICES),
+      size: choiceField("Size", [
+        { value: "sm", label: "Small" },
+        { value: "md", label: "Medium" },
+      ]),
     },
     adapt(Badge),
     { text: "New", variant: "soft", size: "md" },
@@ -207,27 +331,25 @@ const components: Record<string, ComponentConfig> = {
 
 const EDITING = { run: () => {}, editing: true, scope: "" };
 
-const d = settingsSchema.parse({});
+const defaultSettings = settingsSchema.parse({});
 
 const rootFields: Fields = {
-  name: { type: "text", label: "Name" },
-  title: { type: "text", label: "Accessible title" },
-  width: { type: "text", label: "Width" },
-  maxWidth: { type: "text", label: "Max width" },
-  height: { type: "text", label: "Height" },
-  maxHeight: { type: "text", label: "Max height" },
-  position: selectField("Position", POSITIONS),
-  overlay: boolField("Overlay"),
-  overlayColor: { type: "text", label: "Overlay color" },
-  overlayBlur: { type: "text", label: "Overlay blur", placeholder: "e.g. blur(6px)" },
-  background: { type: "text", label: "Background" },
-  radius: { type: "text", label: "Radius" },
-  shadow: { type: "text", label: "Shadow" },
-  animation: selectField("Animation", ANIMATIONS),
-  closeOnEscape: boolField("Close on Escape"),
-  closeOnOverlayClick: boolField("Close on overlay click"),
-  showCloseButton: boolField("Show close button"),
-  lockScroll: boolField("Lock page scroll"),
+  name: textField("Popup name", { hint: "Only you see this." }),
+  title: textField("Title for screen readers", { hint: "Announced when the popup opens. Not shown on screen." }),
+  width: lengthField("Width", { slider: { min: 240, max: 1000, step: 10 }, units: ["px", "%"] }),
+  height: lengthField("Height", { slider: { min: 120, max: 900, step: 10 }, hint: "Leave empty to fit the content." }),
+  position: choiceField("Where it appears", POSITION_CHOICES),
+  background: colorField("Background color"),
+  radius: lengthField("Corner roundness", { slider: { min: 0, max: 48 }, units: ["px"] }),
+  shadow: choiceField("Shadow", SHADOW_CHOICES),
+  animation: choiceField("Entrance", ANIMATION_CHOICES),
+  overlay: toggleField("Dim the page behind", "Turn off to keep the page usable while the popup shows."),
+  overlayColor: colorField("Dim color"),
+  overlayBlur: blurField("Blur the page behind", "A soft-focus effect behind the popup."),
+  closeOnEscape: toggleField("Close with the Escape key"),
+  closeOnOverlayClick: toggleField("Close when the dimmed area is clicked"),
+  showCloseButton: toggleField("Show a close (×) button"),
+  lockScroll: toggleField("Stop the page scrolling behind it"),
 };
 
 export const puckConfig: Config = {
@@ -237,7 +359,7 @@ export const puckConfig: Config = {
   },
   root: {
     fields: rootFields,
-    defaultProps: { name: "", ...d },
+    defaultProps: { name: "", ...defaultSettings },
     render: function PopupRoot({ children, ...props }: Props) {
       return (
         <RuntimeContext.Provider value={EDITING}>

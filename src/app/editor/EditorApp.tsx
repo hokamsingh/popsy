@@ -46,13 +46,18 @@ function HeaderTools({ data, onLoad, errors, savedAt, children }: HeaderToolsPro
     URL.revokeObjectURL(url);
   }
 
+  function replaceWith(next: PuckData) {
+    const ok = window.confirm("This replaces what you're working on now. Export it first if you want to keep it. Continue?");
+    if (ok) onLoad(next);
+  }
+
   async function importJson(file: File) {
     try {
       const result = parsePopup(JSON.parse(await file.text()));
-      if (result.success) onLoad(toPuck(result.data));
-      else alert(result.errors.map((e) => `${e.path}: ${e.message}`).join("\n"));
+      if (result.success) replaceWith(toPuck(result.data));
+      else alert(`That file can't be used:\n${result.errors.map((e) => `• ${e.path}: ${e.message}`).join("\n")}`);
     } catch {
-      alert("That file is not valid JSON.");
+      alert("That file isn't a valid popup file.");
     }
   }
 
@@ -61,10 +66,19 @@ function HeaderTools({ data, onLoad, errors, savedAt, children }: HeaderToolsPro
       <Link href="/" className="tool tool-link" title="Back to home">
         <Home size={15} aria-hidden /> Home
       </Link>
-      <span className={`tool-status${errors.length ? " is-error" : ""}`} title={errors.join("\n")}>
-        {errors.length ? `${errors.length} issue(s), not saved` : savedAt ? `Saved ${savedAt}` : "Not saved yet"}
-      </span>
-      <select className="tool" aria-label="Load benchmark" value="" onChange={(e) => e.target.value && onLoad(toPuck(BENCHMARKS[e.target.value]()))}>
+      {errors.length ? (
+        <details className="tool-problems">
+          <summary className="tool-status is-error">{errors.length} thing(s) to fix, not saved</summary>
+          <ul>
+            {errors.map((error) => (
+              <li key={error}>{error}</li>
+            ))}
+          </ul>
+        </details>
+      ) : (
+        <span className="tool-status">{savedAt ? `Saved ${savedAt}` : "Not saved yet"}</span>
+      )}
+      <select className="tool" aria-label="Load benchmark" value="" onChange={(e) => e.target.value && replaceWith(toPuck(BENCHMARKS[e.target.value]()))}>
         <option value="">Load example…</option>
         {Object.keys(BENCHMARKS).map((id) => (
           <option key={id} value={id}>

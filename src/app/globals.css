@@ -12,7 +12,9 @@ a { color: #4f46e5; }
 .tool:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
 select.tool { padding-right: 8px; }
 .tool-status { padding: 4px 10px; border-radius: 9999px; background: #f4f4f5; color: #52525b; font-size: 12px; white-space: nowrap; }
-.tool-status.is-error { background: #fee2e2; color: #b91c1c; }
+.tool-status.is-error { background: #fee2e2; color: #b91c1c; cursor: pointer; list-style: none; }
+.tool-problems { position: relative; }
+.tool-problems ul { position: absolute; top: calc(100% + 8px); right: 0; z-index: 100; width: 340px; max-height: 50vh; margin: 0; padding: 12px 12px 12px 28px; overflow: auto; border: 1px solid #fecaca; border-radius: 10px; background: #fff; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18); font-size: 12px; line-height: 1.5; color: #7f1d1d; }
 
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: min(560px, calc(100vw - 32px)); padding: 12px 18px; border-radius: 10px; color: #fff; font-size: 14px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25); z-index: 5000; animation: toast-in 180ms ease-out; }
 .toast-success { background: #15803d; }

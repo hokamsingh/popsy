@@ -38,3 +38,25 @@ export const MEDIA = {
   desktopOnly: `(min-width: ${BREAKPOINT_WIDTHS.tablet + 1}px)`,
   tabletOnly: `(min-width: ${BREAKPOINT_WIDTHS.mobile + 1}px) and (max-width: ${BREAKPOINT_WIDTHS.tablet}px)`,
 } as const;
+
+/** Sets or clears one device's value, collapsing back to a plain value when only desktop remains. */
+export function withBreakpointValue<T>(
+  current: Responsive<T> | undefined,
+  breakpoint: Breakpoint,
+  next: T | undefined,
+): Responsive<T> | undefined {
+  const values = { ...expandResponsive(current) };
+  if (next === undefined) delete values[breakpoint];
+  else values[breakpoint] = next;
+  const devices = Object.keys(values);
+  if (devices.length === 0) return undefined;
+  if (devices.length === 1 && values.desktop !== undefined) return values.desktop;
+  return values;
+}
+
+/** What a device falls back to when it has no value of its own. */
+export function inheritedValue<T>(current: Responsive<T> | undefined, breakpoint: Breakpoint): T | undefined {
+  const { desktop, tablet } = expandResponsive(current);
+  if (breakpoint === "desktop") return undefined;
+  return breakpoint === "tablet" ? desktop : (tablet ?? desktop);
+}

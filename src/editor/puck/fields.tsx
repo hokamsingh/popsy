@@ -1,166 +1,205 @@
 "use client";
-import type { CustomField, Field } from "@puckeditor/core";
-import type { CSSProperties, ReactNode } from "react";
-import { BREAKPOINTS, expandResponsive, type Breakpoint, type Responsive } from "@/design-system/responsive";
+import type { CustomField } from "@puckeditor/core";
+import type { ReactElement } from "react";
+import type { Responsive } from "@/design-system/responsive";
+import type { Style } from "@/design-system/styles";
 import type { Action, ActionType } from "@/schema/actions";
 import { ICON_NAMES } from "@/schema/components";
+import { ChoiceControl, type Choice } from "../controls/ChoiceControl";
+import { ColorControl } from "../controls/ColorControl";
+import { FieldShell } from "../controls/FieldShell";
+import { LengthControl, type SliderRange } from "../controls/LengthControl";
+import { NumberStepper } from "../controls/NumberStepper";
+import { PerDevice } from "../controls/PerDevice";
+import { StyleEditor } from "../controls/StyleEditor";
+import { ToggleControl } from "../controls/ToggleControl";
+import { formatBlur, parseBlur, type LengthUnit } from "../controls/values";
+import styles from "../controls/controls.module.css";
 
-const inputStyle: CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "6px 8px",
-  border: "1px solid #d4d4d8",
-  borderRadius: 6,
-  fontSize: 13,
-  background: "#fff",
-};
+type Change<T> = (value: T | undefined) => void;
 
-const rowStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "56px 1fr",
-  alignItems: "center",
-  gap: 6,
-  fontSize: 11,
-  color: "#71717a",
-};
-
-const bpLabel = (bp: Breakpoint) => bp[0].toUpperCase() + bp.slice(1);
-
-function BreakpointRows({ render }: { render: (bp: Breakpoint) => ReactNode }) {
-  return (
-    <div style={{ display: "grid", gap: 4 }}>
-      {BREAKPOINTS.map((bp) => (
-        <label key={bp} style={rowStyle}>
-          {bpLabel(bp)}
-          {render(bp)}
-        </label>
-      ))}
-    </div>
-  );
-}
-
-interface ResponsiveFieldOptions {
-  options?: readonly string[];
-  placeholder?: string;
-}
-
-function responsiveControl<T extends string | boolean>(
-  label: string,
-  opts: ResponsiveFieldOptions,
-  parse: (raw: string) => T,
-  format: (value: T) => string,
-): CustomField<Responsive<T> | undefined> {
+function field<T>(label: string, render: (value: T | undefined, onChange: Change<T>) => ReactElement): CustomField<T | undefined> {
   return {
     type: "custom",
     label,
-    render: ({ value, onChange, id, readOnly }) => {
-      const current = expandResponsive(value);
-      const set = (bp: Breakpoint, raw: string) => {
-        const next = { ...current };
-        if (raw === "") delete next[bp];
-        else next[bp] = parse(raw);
-        onChange(next);
-      };
-      return (
-        <div id={id}>
-          <BreakpointRows
-            render={(bp) => {
-              const shown = current[bp] === undefined ? "" : format(current[bp] as T);
-              return opts.options ? (
-                <select disabled={readOnly} style={inputStyle} value={shown} onChange={(e) => set(bp, e.target.value)}>
-                  <option value="">{bp === "desktop" ? "—" : "inherit"}</option>
-                  {opts.options.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  disabled={readOnly}
-                  style={inputStyle}
-                  value={shown}
-                  placeholder={bp === "desktop" ? (opts.placeholder ?? "e.g. 16px") : "inherit"}
-                  onChange={(e) => set(bp, e.target.value)}
-                />
-              );
-            }}
-          />
-        </div>
-      );
-    },
+    render: ({ value, onChange }) => render(value, onChange as Change<T>),
   };
 }
 
-const identity = (s: string) => s;
+const firstDevice = <T,>(value: Responsive<T> | undefined): T | undefined =>
+  value !== null && typeof value === "object" ? (value as Partial<Record<"desktop", T>>).desktop : value;
 
-export const responsiveField = (label: string, opts: ResponsiveFieldOptions = {}) =>
-  responsiveControl<string>(label, opts, identity, identity);
+interface LengthFieldOptions {
+  hint?: string;
+  slider?: SliderRange;
+  units?: readonly LengthUnit[];
+  perDevice?: boolean;
+}
 
-export const responsiveToggle = (label: string) =>
-  responsiveControl<boolean>(label, { options: ["yes", "no"] }, (raw) => raw === "yes", (v) => (v ? "yes" : "no"));
+export const lengthField = (label: string, { hint, slider, units, perDevice = false }: LengthFieldOptions = {}) =>
+  field<Responsive<string>>(label, (value, onChange) => (
+    <FieldShell label={label} hint={hint}>
+      {perDevice ? (
+        <PerDevice value={value} onChange={onChange}>
+          {(device) => <LengthControl label={label} slider={slider} units={units} {...device} />}
+        </PerDevice>
+      ) : (
+        <LengthControl label={label} slider={slider} units={units} value={firstDevice(value)} onChange={onChange} />
+      )}
+    </FieldShell>
+  ));
 
-export const boolField = (label: string): Field => ({
-  type: "radio",
-  label,
-  options: [
-    { label: "Yes", value: true },
-    { label: "No", value: false },
-  ],
-});
+interface NumberFieldOptions {
+  hint?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  perDevice?: boolean;
+}
 
-export const selectField = (label: string, values: readonly string[], allowEmpty = false): Field => ({
-  type: "select",
-  label,
-  options: [...(allowEmpty ? [{ label: "—", value: "" }] : []), ...values.map((v) => ({ label: v, value: v }))],
-});
+export const numberField = (label: string, { hint, min, max, step, perDevice = false }: NumberFieldOptions = {}) =>
+  field<Responsive<string>>(label, (value, onChange) => {
+    const control = (current: string | undefined, set: Change<string>, inherited?: string) => {
+      const isNumeric = current === undefined || !Number.isNaN(Number(current));
+      return isNumeric ? (
+        <NumberStepper
+          label={label}
+          value={current === undefined ? undefined : Number(current)}
+          placeholder={inherited}
+          min={min}
+          max={max}
+          step={step}
+          onChange={(next) => set(next === undefined ? undefined : String(next))}
+        />
+      ) : (
+        <input className={styles.text} aria-label={label} value={current} onChange={(event) => set(event.target.value || undefined)} />
+      );
+    };
+    return (
+      <FieldShell label={label} hint={hint}>
+        {perDevice ? (
+          <PerDevice value={value} onChange={onChange}>
+            {({ value: own, inherited, onChange: set }) => control(own, set, inherited)}
+          </PerDevice>
+        ) : (
+          control(firstDevice(value), onChange)
+        )}
+      </FieldShell>
+    );
+  });
 
-export const iconField = (label = "Icon"): Field => selectField(label, ICON_NAMES, true);
+export const colorField = (label: string, hint?: string) =>
+  field<string>(label, (value, onChange) => (
+    <FieldShell label={label} hint={hint}>
+      <ColorControl label={label} value={value} onChange={onChange} />
+    </FieldShell>
+  ));
+
+interface ChoiceFieldOptions {
+  hint?: string;
+  unsetLabel?: string;
+  perDevice?: boolean;
+}
+
+export const choiceField = <T extends string>(label: string, choices: readonly Choice<T>[], { hint, unsetLabel, perDevice = false }: ChoiceFieldOptions = {}) =>
+  field<Responsive<T>>(label, (value, onChange) => (
+    <FieldShell label={label} hint={hint}>
+      {perDevice ? (
+        <PerDevice value={value} onChange={onChange}>
+          {(device) => <ChoiceControl label={label} choices={choices} unsetLabel={unsetLabel} {...device} />}
+        </PerDevice>
+      ) : (
+        <ChoiceControl label={label} choices={choices} unsetLabel={unsetLabel} value={firstDevice(value)} onChange={onChange} />
+      )}
+    </FieldShell>
+  ));
+
+export const toggleField = (label: string, hint?: string) =>
+  field<Responsive<boolean>>(label, (value, onChange) => (
+    <ToggleControl label={label} hint={hint} checked={firstDevice(value) === true} onChange={onChange} />
+  ));
+
+interface TextFieldOptions {
+  hint?: string;
+  placeholder?: string;
+  multiline?: boolean;
+}
+
+export const textField = (label: string, { hint, placeholder, multiline }: TextFieldOptions = {}) =>
+  field<string>(label, (value, onChange) => (
+    <FieldShell label={label} hint={hint}>
+      {multiline ? (
+        <textarea className={styles.text} rows={4} aria-label={label} placeholder={placeholder} value={value ?? ""} onChange={(event) => onChange(event.target.value)} />
+      ) : (
+        <input className={styles.text} aria-label={label} placeholder={placeholder} value={value ?? ""} onChange={(event) => onChange(event.target.value || undefined)} />
+      )}
+    </FieldShell>
+  ));
+
+export const blurField = (label: string, hint?: string) =>
+  field<string>(label, (value, onChange) => {
+    const amount = parseBlur(value);
+    return (
+      <FieldShell label={`${label}: ${amount}px`} hint={hint}>
+        <input type="range" className={styles.slider} aria-label={label} min={0} max={30} value={amount} onChange={(event) => onChange(formatBlur(Number(event.target.value), value))} />
+      </FieldShell>
+    );
+  });
+
+export const iconField = (label = "Icon", { required = false }: { required?: boolean } = {}) => {
+  const choices: Choice<string>[] = ICON_NAMES.map((name) => ({ value: name, label: name.replace(/-/g, " ") }));
+  return field<string>(label, (value, onChange) => (
+    <FieldShell label={label}>
+      <ChoiceControl label={label} choices={choices} value={value} onChange={onChange} unsetLabel={required ? undefined : "No icon"} />
+    </FieldShell>
+  ));
+};
+
+export const styleField = () =>
+  field<Style>("Style", (value, onChange) => <StyleEditor value={value} onChange={onChange} />);
 
 type ActionChoice = ActionType | "none";
 
 const ACTION_CHOICES: Record<ActionChoice, { label: string; initial: Action | undefined }> = {
-  none: { label: "None", initial: undefined },
-  dismiss: { label: "Dismiss popup", initial: { type: "dismiss" } },
-  navigate: { label: "Navigate (in-app)", initial: { type: "navigate", to: "/" } },
-  external_url: { label: "Open URL", initial: { type: "external_url", url: "https://", newTab: true } },
-  event: { label: "Emit event", initial: { type: "event", name: "continue" } },
+  none: { label: "Do nothing", initial: undefined },
+  dismiss: { label: "Close the popup", initial: { type: "dismiss" } },
+  navigate: { label: "Go to a page on your site", initial: { type: "navigate", to: "/" } },
+  external_url: { label: "Open a web address", initial: { type: "external_url", url: "https://", newTab: true } },
+  event: { label: "Tell your app (custom signal)", initial: { type: "event", name: "continue" } },
 };
 
-export function actionField(label = "Action"): CustomField<Action | undefined> {
-  return {
-    type: "custom",
-    label,
-    render: ({ value, onChange, id, readOnly }) => {
-      const text = (current: string, update: (v: string) => Action, placeholder?: string) => (
-        <input disabled={readOnly} style={inputStyle} value={current} placeholder={placeholder} onChange={(e) => onChange(update(e.target.value))} />
-      );
-      return (
-        <div id={id} style={{ display: "grid", gap: 6 }}>
-          <select
-            disabled={readOnly}
-            style={inputStyle}
-            value={value?.type ?? "none"}
-            onChange={(e) => onChange(ACTION_CHOICES[e.target.value as ActionChoice].initial)}
-          >
-            {(Object.entries(ACTION_CHOICES) as [ActionChoice, { label: string }][]).map(([key, { label: text }]) => (
-              <option key={key} value={key}>
-                {text}
-              </option>
-            ))}
-          </select>
-          {value?.type === "navigate" && text(value.to, (to) => ({ ...value, to }))}
-          {value?.type === "external_url" && (
-            <>
-              {text(value.url, (url) => ({ ...value, url }))}
-              <label style={{ fontSize: 12 }}>
-                <input type="checkbox" checked={value.newTab ?? true} onChange={(e) => onChange({ ...value, newTab: e.target.checked })} /> Open in new tab
-              </label>
-            </>
-          )}
-          {value?.type === "event" && text(value.name, (name) => ({ ...value, name }), "event_name")}
-        </div>
-      );
-    },
-  };
-}
+export const actionField = (label = "When clicked") =>
+  field<Action>(label, (value, onChange) => {
+    const text = (current: string, update: (next: string) => Action, placeholder?: string) => (
+      <input className={styles.text} aria-label={label} value={current} placeholder={placeholder} onChange={(event) => onChange(update(event.target.value))} />
+    );
+    return (
+      <FieldShell label={label}>
+        <select
+          className={styles.select}
+          aria-label={label}
+          value={value?.type ?? "none"}
+          onChange={(event) => onChange(ACTION_CHOICES[event.target.value as ActionChoice].initial)}
+        >
+          {(Object.entries(ACTION_CHOICES) as [ActionChoice, { label: string }][]).map(([key, choice]) => (
+            <option key={key} value={key}>
+              {choice.label}
+            </option>
+          ))}
+        </select>
+        {value?.type === "navigate" && text(value.to, (to) => ({ ...value, to }), "/pricing")}
+        {value?.type === "external_url" && (
+          <>
+            {text(value.url, (url) => ({ ...value, url }), "https://example.com")}
+            <ToggleControl label="Open in a new tab" checked={value.newTab ?? true} onChange={(newTab) => onChange({ ...value, newTab })} />
+          </>
+        )}
+        {value?.type === "event" && (
+          <>
+            {text(value.name, (name) => ({ ...value, name }), "claim_offer")}
+            <p className={styles.hint}>A name your developer listens for, such as claim_offer or start_signup.</p>
+          </>
+        )}
+      </FieldShell>
+    );
+  });
