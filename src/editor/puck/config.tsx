@@ -3,7 +3,7 @@ import type { ComponentConfig, Config, Fields } from "@puckeditor/core";
 import type { ReactNode } from "react";
 import { Badge, Button, Icon, Image, RichText, Text, Video } from "@/components/content";
 import { Countdown } from "@/components/content/Countdown";
-import { Container, Divider, Flex, Grid, Section, Spacer, Stack } from "@/components/layout";
+import { Container, Divider, Flex, Grid, Layers, Section, Spacer, Stack } from "@/components/layout";
 import { PopupShell } from "@/components/popup/PopupShell";
 import { RuntimeContext } from "@/runtime/context";
 import { COMPONENTS } from "@/schema/components";
@@ -218,6 +218,15 @@ const countdown: ComponentConfig = {
 const components: Record<string, ComponentConfig> = {
   Section: component("Section", { children: slot }, adapt(Section), { style: { padding: "32px" } }),
   Container: component("Container", { children: slot }, adapt(Container), { style: { maxWidth: "100%" } }),
+  Layers: component(
+    "Layers (stack on top)",
+    {
+      height: lengthField("Height of the layer box", { perDevice: true, slider: { min: 80, max: 800, step: 10 }, hint: "Blocks inside sit on top of each other. Pick each block's spot in its own settings." }),
+      children: slot,
+    },
+    adapt(Layers),
+    { height: "320px" },
+  ),
   Stack: component(
     "Stack (top to bottom)",
     {

@@ -107,4 +107,31 @@ describe("PopupRenderer", () => {
     const [first, second] = [...container.querySelectorAll('[data-pp="text"]')];
     expect(first.className).not.toBe(second.className);
   });
+
+  it("floats blocks on a Layers parent, but not the same block elsewhere", () => {
+    const badge = { id: "b", type: "badge", props: { text: "New" }, style: { anchor: "top-left", offsetX: "16px" } } as const;
+    const onLayer: Popup = { ...createEmptyPopup(), children: [{ id: "l", type: "layers", props: {}, children: [badge] }] };
+    const inStack: Popup = { ...createEmptyPopup(), children: [{ id: "s", type: "stack", props: {}, children: [{ ...badge }] }] };
+    const cssOf = (popup: Popup) => {
+      const { container, unmount } = render(<PopupRenderer popup={popup} mode="inline" />);
+      const css = [...container.querySelectorAll("style")].map((node) => node.textContent).join("");
+      unmount();
+      return css;
+    };
+    expect(cssOf(onLayer)).toContain("justify-self:start");
+    expect(cssOf(inStack)).not.toContain("justify-self");
+  });
+
+  it("only the direct children of Layers float, not what is inside them", () => {
+    const text = { id: "t", type: "text", props: { content: "Hi" }, style: { offsetX: "33px" } } as const;
+    const popup: Popup = {
+      ...createEmptyPopup(),
+      children: [{ id: "l", type: "layers", props: {}, children: [{ id: "s", type: "stack", props: {}, children: [text] }] }],
+    };
+    const { container } = render(<PopupRenderer popup={popup} mode="inline" />);
+    const css = [...container.querySelectorAll("style")].map((node) => node.textContent).join("");
+    expect(css).toMatch(/:has\(> \.pp-[^)]*-s\)/);
+    expect(css).not.toMatch(/:has\(> \.pp-[^)]*-t\)/);
+  });
 });
+

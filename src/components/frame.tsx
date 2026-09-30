@@ -1,6 +1,7 @@
 "use client";
-import type { CSSProperties, ElementType, ReactNode } from "react";
+import { createContext, useContext, type CSSProperties, type ElementType, type ReactNode } from "react";
 import { mapResponsive, type Responsive } from "@/design-system/responsive";
+import { layerCssProps } from "@/design-system/layers";
 import { buildCss, type CssProps, type Style } from "@/design-system/styles";
 import { useRuntime } from "@/runtime/context";
 
@@ -15,6 +16,9 @@ export interface NodeBaseProps {
 
 const cssSafe = (text: string) => text.replace(/[^A-Za-z0-9_-]/g, "_");
 
+/** The class name of the Layers block that a block sits directly inside, if any. */
+export const LayerContext = createContext<string | null>(null);
+
 export const nodeClass = (id: string, scope = "") => `pp-${scope ? `${cssSafe(scope)}-` : ""}${cssSafe(id)}`;
 
 interface FrameProps extends NodeBaseProps {
@@ -24,22 +28,31 @@ interface FrameProps extends NodeBaseProps {
   attrs?: Record<string, unknown>;
   minEmptyHeight?: number;
   nested?: (selector: string) => string;
+  placesChildrenOnLayer?: boolean;
 }
 
-export function Frame({ id, as: Tag = "div", kind, cssProps, style, attrs, children, slot, minEmptyHeight, nested }: FrameProps) {
+export function Frame({ id, as: Tag = "div", kind, cssProps, style, attrs, children, slot, minEmptyHeight, nested, placesChildrenOnLayer = false }: FrameProps) {
   const { scope } = useRuntime();
+  const parentLayerClass = useContext(LayerContext);
   const cls = nodeClass(id, scope);
-  const css = buildCss(`.${cls}`, cssProps, style) + (nested?.(`.${cls}`) ?? "");
+  const placement = parentLayerClass ? layerCssProps(style?.anchor, style?.offsetX, style?.offsetY) : null;
+  const gridItemSelector = `.${parentLayerClass} > :is(.${cls}, :has(> .${cls}))`;
+  const css =
+    buildCss(`.${cls}`, { ...cssProps, ...placement?.self }, style) +
+    (placement ? buildCss(gridItemSelector, placement.item) : "") +
+    (nested?.(`.${cls}`) ?? "");
+  const content = slot ? (
+    slot({ className: cls, minEmptyHeight })
+  ) : (
+    <Tag className={cls} data-pp={kind} {...attrs}>
+      {children}
+    </Tag>
+  );
+
   return (
     <>
       {css ? <style>{css}</style> : null}
-      {slot ? (
-        slot({ className: cls, minEmptyHeight })
-      ) : (
-        <Tag className={cls} data-pp={kind} {...attrs}>
-          {children}
-        </Tag>
-      )}
+      <LayerContext.Provider value={placesChildrenOnLayer ? cls : null}>{content}</LayerContext.Provider>
     </>
   );
 }

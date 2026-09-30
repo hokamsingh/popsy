@@ -2,7 +2,7 @@
 import { memo, useEffect, useId, useMemo, type ReactNode } from "react";
 import { Badge, Button, Icon, Image, RichText, Text, Video } from "@/components/content";
 import { Countdown } from "@/components/content/Countdown";
-import { Container, Divider, Flex, Grid, Section, Spacer, Stack } from "@/components/layout";
+import { Container, Divider, Flex, Grid, Layers, Section, Spacer, Stack } from "@/components/layout";
 import { PopupShell, type ShellMode } from "@/components/popup/PopupShell";
 import { parsePopup, type PopupNode } from "@/schema/popup";
 import { createActionRuntime, type ActionRuntimeOptions } from "./actions";
@@ -13,6 +13,7 @@ const COMPONENT_BY_TYPE: Record<string, (props: any) => ReactNode> = {
   section: Section,
   container: Container,
   stack: Stack,
+  layers: Layers,
   flex: Flex,
   grid: Grid,
   spacer: Spacer,

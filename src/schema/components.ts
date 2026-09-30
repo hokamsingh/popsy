@@ -160,6 +160,8 @@ export const countdownProps = z
     message: "choose the date and time to count down to",
   });
 
+export const layersProps = z.object({ height: cssR.default("320px") }).strict();
+
 export const spacerProps = z.object({ height: cssR.default("16px") }).strict();
 
 export const dividerProps = z
@@ -186,6 +188,7 @@ export interface ComponentDef {
 export const COMPONENTS: ComponentDef[] = [
   { type: "section", editorKey: "Section", label: "Section", category: "layout", props: emptyProps, container: true },
   { type: "container", editorKey: "Container", label: "Container", category: "layout", props: emptyProps, container: true },
+  { type: "layers", editorKey: "Layers", label: "Layers", category: "layout", props: layersProps, container: true },
   { type: "stack", editorKey: "Stack", label: "Stack", category: "layout", props: stackProps, container: true },
   { type: "flex", editorKey: "Flex", label: "Flex", category: "layout", props: flexProps, container: true },
   { type: "grid", editorKey: "Grid", label: "Grid", category: "layout", props: gridProps, container: true },

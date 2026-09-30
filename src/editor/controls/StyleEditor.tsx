@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { expandResponsive, resolveResponsive, type Responsive } from "@/design-system/responsive";
 import type { Style } from "@/design-system/styles";
+import { AnchorControl } from "./AnchorControl";
 import { ChoiceControl, type Choice } from "./ChoiceControl";
 import { ColorControl } from "./ColorControl";
 import { FieldShell } from "./FieldShell";
@@ -135,6 +136,24 @@ function SidesRow({ field, label, hint, style, update }: SectionProps & { field:
         {(device) => <SpacingControl label={label} value={device.value} onChange={device.onChange} />}
       </PerDevice>
     </FieldShell>
+  );
+}
+
+function LayerSection({ style, update }: SectionProps) {
+  return (
+    <Section title="Position on the layer" defaultOpen>
+      <FieldShell label="Where it sits" hint="This block floats on top of the others. Blocks lower in the Outline appear in front.">
+        <PerDevice value={style.anchor} onChange={(next) => update("anchor", next)}>
+          {(device) => <AnchorControl label="Where it sits" {...device} />}
+        </PerDevice>
+      </FieldShell>
+      <FieldShell label="Distance across" hint="Pushes it away from the left or right edge. For the middle spots it nudges sideways.">
+        <LengthControl label="Distance across" value={style.offsetX as string | undefined} onChange={(next) => update("offsetX", next)} slider={{ min: -100, max: 100 }} units={["px"]} />
+      </FieldShell>
+      <FieldShell label="Distance down" hint="Pushes it away from the top or bottom edge. For the middle spots it nudges up or down.">
+        <LengthControl label="Distance down" value={style.offsetY as string | undefined} onChange={(next) => update("offsetY", next)} slider={{ min: -100, max: 100 }} units={["px"]} />
+      </FieldShell>
+    </Section>
   );
 }
 
@@ -338,9 +357,10 @@ function AdvancedSection({ style, update }: SectionProps) {
 interface StyleEditorProps {
   value: Style | undefined;
   onChange: (value: Style) => void;
+  isOnLayer?: boolean;
 }
 
-export function StyleEditor({ value, onChange }: StyleEditorProps) {
+export function StyleEditor({ value, onChange, isOnLayer = false }: StyleEditorProps) {
   const style = value ?? {};
   const patch = (changes: Style) => {
     const merged: Style = { ...style, ...changes };
@@ -351,6 +371,7 @@ export function StyleEditor({ value, onChange }: StyleEditorProps) {
 
   return (
     <div>
+      {isOnLayer && <LayerSection {...props} />}
       <SpacingSection {...props} />
       <SizeSection {...props} />
       <TextSection {...props} />

@@ -160,6 +160,15 @@ export const glassmorphism = () =>
     ]),
   ]);
 
+export const layeredImage = () =>
+  build("Badge on an image", { width: "420px" }, () => [
+    node("layers", { height: "280px" }, undefined, [
+      node("spacer", { height: "100%" }, { anchor: "fill", gradient: "linear-gradient(135deg, #6366f1, #ec4899 60%, #f59e0b)" }),
+      node("badge", { text: "New", icon: "sparkles", variant: "solid" }, { anchor: "top-left", offsetX: "16px", offsetY: "16px" }),
+      node("text", { content: "Summer collection", variant: "heading" }, { anchor: "bottom-left", offsetX: "20px", offsetY: "20px", color: "#ffffff" }),
+    ]),
+  ]);
+
 export const countdown = () =>
   build("Countdown", { width: "460px" }, () => [
     node("section", {}, { padding: "32px" }, [
@@ -207,4 +216,5 @@ export const BENCHMARKS: Record<string, () => Popup> = {
   "video-popup": videoPopup,
   glassmorphism,
   countdown,
+  "layered-image": layeredImage,
 };

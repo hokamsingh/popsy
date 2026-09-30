@@ -8,6 +8,7 @@ import {
   resolveResponsive,
   type Responsive,
 } from "./responsive";
+import { ANCHORS } from "./layers";
 import { isTokenName, resolveTokens } from "./tokens";
 
 export const cssValue = z
@@ -58,6 +59,9 @@ export const styleSchema = z
     overflow: responsive(z.enum(OVERFLOWS)),
     position: responsive(z.enum(POSITION_MODES)),
     hidden: responsive(z.boolean()),
+    anchor: responsive(z.enum(ANCHORS)),
+    offsetX: css,
+    offsetY: css,
   })
   .partial()
   .strict();

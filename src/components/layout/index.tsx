@@ -139,3 +139,10 @@ export function Divider({
     />
   );
 }
+
+export function Layers({ height = "320px", ...node }: NodeBaseProps & { height?: Css }) {
+  return (
+    <Frame {...node} kind="layers" minEmptyHeight={120} placesChildrenOnLayer cssProps={{ display: "grid", "grid-template": "minmax(0, 1fr) / minmax(0, 1fr)", position: "relative", width: "100%", height, "box-sizing": "border-box" }} />
+  );
+}
+

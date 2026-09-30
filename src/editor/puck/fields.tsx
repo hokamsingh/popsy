@@ -1,5 +1,5 @@
 "use client";
-import type { CustomField } from "@puckeditor/core";
+import { usePuck, type CustomField } from "@puckeditor/core";
 import type { ReactElement } from "react";
 import type { Responsive } from "@/design-system/responsive";
 import type { Style } from "@/design-system/styles";
@@ -219,8 +219,16 @@ export const iconField = (label = "Icon", { required = false }: { required?: boo
   ));
 };
 
-export const styleField = () =>
-  field<Style>("Style", (value, onChange) => <StyleEditor value={value} onChange={onChange} />);
+function useIsSelectedOnLayer() {
+  const { selectedItem, getParentById } = usePuck();
+  return !!selectedItem && getParentById(selectedItem.props.id)?.type === "Layers";
+}
+
+function StyleFieldEditor({ value, onChange }: { value: Style | undefined; onChange: Change<Style> }) {
+  return <StyleEditor value={value} onChange={onChange} isOnLayer={useIsSelectedOnLayer()} />;
+}
+
+export const styleField = () => field<Style>("Style", (value, onChange) => <StyleFieldEditor value={value} onChange={onChange} />);
 
 type ActionChoice = ActionType | "none";
 
