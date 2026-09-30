@@ -32,7 +32,7 @@ function Preview() {
   return (
     <>
       <div className="bar">
-        <strong>Preview{fixture ? ` — ${fixture}` : ""}</strong>
+        <strong>{fixture ? `Example: ${fixture}` : "Your saved popup"}</strong>
         <button type="button" onClick={() => setOpen(true)}>Open popup</button>
         <Link href="/editor">Editor</Link>
         <Link href="/">Home</Link>

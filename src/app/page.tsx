@@ -9,7 +9,11 @@ export default function Home() {
       <p>
         <Link href="/editor">Open the editor →</Link>
       </p>
-      <h2>Benchmark popups</h2>
+      <p>
+        <Link href="/preview">Preview your saved popup →</Link>
+      </p>
+      <h2>Examples</h2>
+      <p>These are the original samples and never include your edits. Open one in the editor with “Load example…” to customise it.</p>
       <ul>
         {Object.keys(BENCHMARKS).map((id) => (
           <li key={id}>
