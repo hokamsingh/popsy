@@ -10,7 +10,7 @@ import { COMPONENTS } from "@/schema/components";
 import { settingsSchema, type PopupSettings } from "@/schema/popup";
 import type { Choice } from "../controls/ChoiceControl";
 import {
-  actionField, blurField, choiceField, colorField, dateTimeField, fontField, iconField, lengthField, numberField, popupHeightField, radiusField, styleField, textField, themeFontsField, toggleField,
+  actionField, blurField, choiceField, colorField, dateTimeField, fontField, iconField, layerOnTopField, lengthField, numberField, popupHeightField, radiusField, styleField, textField, themeFontsField, toggleField,
 } from "./fields";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -163,7 +163,7 @@ function adapt(Comp: (p: any) => ReactNode): ComponentConfig["render"] {
 
 const component = (label: string, fields: Fields, render: ComponentConfig["render"], defaultProps: Props): ComponentConfig => ({
   label,
-  fields: { ...fields, style: styleField() },
+  fields: { ...fields, overlay: layerOnTopField(), style: styleField() },
   defaultProps: { style: {}, ...defaultProps },
   render,
 });
@@ -195,11 +195,11 @@ const countdownFields: Fields = {
 
 const countdown: ComponentConfig = {
   label: "Countdown",
-  fields: { ...countdownFields, style: styleField() },
+  fields: { ...countdownFields, overlay: layerOnTopField(), style: styleField() },
   resolveFields: (data) => {
     const { mode } = data.props as Props;
     const { target, durationMinutes, ...common } = countdownFields;
-    return { mode: common.mode, ...(mode === "duration" ? { durationMinutes } : { target }), ...common, style: styleField() };
+    return { mode: common.mode, ...(mode === "duration" ? { durationMinutes } : { target }), ...common, overlay: layerOnTopField(), style: styleField() };
   },
   defaultProps: {
     style: { color: "token:color.text" },
@@ -221,7 +221,7 @@ const components: Record<string, ComponentConfig> = {
   Layers: component(
     "Layers (stack on top)",
     {
-      height: lengthField("Height of the layer box", { perDevice: true, slider: { min: 80, max: 800, step: 10 }, hint: "Blocks inside sit on top of each other. Pick each block's spot in its own settings." }),
+      height: popupHeightField("Height of the layer box", { min: 80, max: 800, step: 10 }),
       children: slot,
     },
     adapt(Layers),

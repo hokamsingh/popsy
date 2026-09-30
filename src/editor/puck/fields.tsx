@@ -18,6 +18,7 @@ import { SizeControl } from "../controls/SizeControl";
 import { StyleEditor } from "../controls/StyleEditor";
 import { ToggleControl } from "../controls/ToggleControl";
 import { formatBlur, isoToLocalInput, localInputToIso, parseBlur, parseLength, type LengthUnit } from "../controls/values";
+import { putBadgeOnBlock } from "./overlay";
 import styles from "../controls/controls.module.css";
 
 type Change<T> = (value: T | undefined) => void;
@@ -159,6 +160,33 @@ export const dateTimeField = (label: string, hint?: string) =>
       />
     </FieldShell>
   ));
+
+function LayerOnTopButton() {
+  const { selectedItem, getSelectorForId, dispatch } = usePuck();
+
+  const addBadge = () => {
+    const selector = selectedItem ? getSelectorForId(selectedItem.props.id) : undefined;
+    if (!selectedItem || !selector) return;
+    const layers = putBadgeOnBlock(selectedItem);
+    dispatch({
+      type: "replace",
+      destinationIndex: selector.index,
+      destinationZone: selector.zone,
+      data: layers,
+      ui: { itemSelector: { index: 1, zone: `${layers.props.id}:children` } },
+    });
+  };
+
+  return (
+    <FieldShell label="Put something on top of this block" hint="Wraps this block in a layer and adds a “New” badge in its top-left corner. Then change the badge's text and spot, or drop more blocks into the layer.">
+      <button type="button" className={styles.presetButton} onClick={addBadge}>
+        Add a badge on top
+      </button>
+    </FieldShell>
+  );
+}
+
+export const layerOnTopField = () => field<never>("Put something on top", () => <LayerOnTopButton />);
 
 export const fontField = (label: string, hint?: string) =>
   field<string>(label, (value, onChange) => (
