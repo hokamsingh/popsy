@@ -1,6 +1,8 @@
+"use client";
 import type { CSSProperties, ElementType, ReactNode } from "react";
 import { mapResponsive, type Responsive } from "@/design-system/responsive";
 import { buildCss, type CssProps, type Style } from "@/design-system/styles";
+import { useRuntime } from "@/runtime/context";
 
 export type SlotRender = (props: { className?: string; style?: CSSProperties; minEmptyHeight?: number }) => ReactNode;
 
@@ -11,7 +13,9 @@ export interface NodeBaseProps {
   slot?: SlotRender;
 }
 
-export const nodeClass = (id: string) => `pp-${id.replace(/[^A-Za-z0-9_-]/g, "_")}`;
+const cssSafe = (text: string) => text.replace(/[^A-Za-z0-9_-]/g, "_");
+
+export const nodeClass = (id: string, scope = "") => `pp-${scope ? `${cssSafe(scope)}-` : ""}${cssSafe(id)}`;
 
 interface FrameProps extends NodeBaseProps {
   as?: ElementType;
@@ -23,7 +27,8 @@ interface FrameProps extends NodeBaseProps {
 }
 
 export function Frame({ id, as: Tag = "div", kind, cssProps, style, attrs, children, slot, minEmptyHeight, nested }: FrameProps) {
-  const cls = nodeClass(id);
+  const { scope } = useRuntime();
+  const cls = nodeClass(id, scope);
   const css = buildCss(`.${cls}`, cssProps, style) + (nested?.(`.${cls}`) ?? "");
   return (
     <>

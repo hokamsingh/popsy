@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEmptyPopup, parsePopup } from "./popup";
 import { isSafeAssetUrl, isSafeCssValue, isSafeLinkUrl } from "./validation";
-import { BENCHMARKS } from "@/templates/benchmarks";
+import { BENCHMARKS, heroDemo } from "@/templates/benchmarks";
 
 const doc = (children: unknown[], extra: Record<string, unknown> = {}) => ({
   version: 1,
@@ -107,5 +107,11 @@ describe("benchmark fixtures", () => {
     const r = parsePopup(make());
     if (!r.success) throw new Error(JSON.stringify(r.errors));
     expect(r.success).toBe(true);
+  });
+});
+
+describe("home hero demo", () => {
+  it("is a valid canonical popup", () => {
+    expect(parsePopup(heroDemo()).success).toBe(true);
   });
 });

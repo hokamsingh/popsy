@@ -94,4 +94,17 @@ describe("PopupRenderer", () => {
     fireEvent.keyDown(buttons[buttons.length - 1], { key: "Tab" });
     expect(document.activeElement).toBe(buttons[0]);
   });
+
+  it("keeps styles separate when two popups on one page reuse the same node ids", () => {
+    const red: Popup = { ...createEmptyPopup(), children: [{ id: "a", type: "text", props: { content: "red" }, style: { color: "red" } }] };
+    const blue: Popup = { ...createEmptyPopup(), children: [{ id: "a", type: "text", props: { content: "blue" }, style: { color: "blue" } }] };
+    const { container } = render(
+      <>
+        <PopupRenderer popup={red} mode="inline" />
+        <PopupRenderer popup={blue} mode="inline" />
+      </>,
+    );
+    const [first, second] = [...container.querySelectorAll('[data-pp="text"]')];
+    expect(first.className).not.toBe(second.className);
+  });
 });

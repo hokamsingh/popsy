@@ -1,5 +1,5 @@
 "use client";
-import { memo, useEffect, useMemo, type ReactNode } from "react";
+import { memo, useEffect, useId, useMemo, type ReactNode } from "react";
 import { Badge, Button, Icon, Image, RichText, Text, Video } from "@/components/content";
 import { Container, Divider, Flex, Grid, Section, Spacer, Stack } from "@/components/layout";
 import { PopupShell, type ShellMode } from "@/components/popup/PopupShell";
@@ -56,10 +56,12 @@ export const PopupRenderer = memo(function PopupRenderer({
 }: PopupRendererProps) {
   const parsed = useMemo(() => parsePopup(popup), [popup]);
 
+  const scope = useId();
+
   const contextValue = useMemo(() => {
     const runtime = createActionRuntime({ ...actions, onDismiss });
-    return { run: (action: Parameters<typeof runtime.run>[0]) => void runtime.run(action), editing };
-  }, [actions, onDismiss, editing]);
+    return { run: (action: Parameters<typeof runtime.run>[0]) => void runtime.run(action), editing, scope };
+  }, [actions, onDismiss, editing, scope]);
 
   const content = useMemo(() => (parsed.success ? parsed.data.children.map(renderNode) : null), [parsed]);
 

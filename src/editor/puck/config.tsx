@@ -205,7 +205,7 @@ const components: Record<string, ComponentConfig> = {
   ),
 };
 
-const EDITING = { run: () => {}, editing: true };
+const EDITING = { run: () => {}, editing: true, scope: "" };
 
 const d = settingsSchema.parse({});
 

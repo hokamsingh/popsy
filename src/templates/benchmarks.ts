@@ -160,6 +160,29 @@ export const glassmorphism = () =>
     ]),
   ]);
 
+export const heroDemo = () =>
+  build("Home hero demo", { width: "400px", background: "transparent", shadow: "none", showCloseButton: false }, () => [
+    node("section", {}, { padding: "8px" }, [
+      node("stack", { gap: "14px", align: "start" }, {
+        padding: "28px",
+        background: "rgba(255,255,255,0.14)",
+        backdropFilter: "blur(18px) saturate(1.5)",
+        border: "1px solid rgba(255,255,255,0.4)",
+        radius: "token:radius.lg",
+        shadow: "0 24px 64px rgba(0,0,0,0.35)",
+        color: "#ffffff",
+      }, [
+        node("badge", { text: "Weekend flash sale", icon: "sparkles", variant: "outline" }, { color: "#ffffff", border: "1px solid rgba(255,255,255,0.6)" }),
+        node("text", { content: "Take 30% off your first order", variant: "heading", fontSize: "30px", lineHeight: "1.15" }),
+        node("text", { content: "Built in the Popsy editor from a handful of generic blocks." }, { color: "rgba(255,255,255,0.85)" }),
+        node("flex", { gap: "10px", wrap: true }, undefined, [
+          node("button", { label: "Claim offer", icon: "gift", action: { type: "event", name: "claim_offer" } }, { background: "#ffffff", color: "#0f172a" }),
+          node("button", { label: "Maybe later", variant: "ghost", action: dismiss }, { color: "#ffffff" }),
+        ]),
+      ]),
+    ]),
+  ]);
+
 export const BENCHMARKS: Record<string, () => Popup> = {
   announcement,
   "full-bleed-image": fullBleedImage,
