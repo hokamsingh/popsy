@@ -4,17 +4,11 @@ import { isSafeLinkUrl } from "@/schema/validation";
 export type EventHandler = (payload: Record<string, unknown> | undefined) => void | Promise<void>;
 
 export interface ActionRuntimeOptions {
-  /** Called for `dismiss` actions. */
   onDismiss?: () => void;
-  /** Called for `navigate`. Defaults to `location.assign`. */
   navigate?: (to: string) => void;
-  /** Called for `external_url`. Defaults to `window.open` with noopener. */
   openUrl?: (url: string, newTab: boolean) => void;
-  /** Domain actions, keyed by event name: `{ claim_bonus: () => ... }`. */
   handlers?: Record<string, EventHandler>;
-  /** Fallback for events with no registered handler. */
   onEvent?: (name: string, payload: Record<string, unknown> | undefined) => void;
-  /** Reports actions that were refused (unsafe URL, missing handler, handler error). */
   onError?: (message: string, action: Action) => void;
 }
 
@@ -29,10 +23,6 @@ const defaultOpenUrl = (url: string, newTab: boolean) => {
   else window.location.assign(url);
 };
 
-/**
- * The runtime action registry: Button → Action → registry → application code.
- * Buttons only emit data; the host decides what `event` names mean.
- */
 export function createActionRuntime(opts: ActionRuntimeOptions = {}): ActionRuntime {
   const handlers = new Map<string, EventHandler>(Object.entries(opts.handlers ?? {}));
 

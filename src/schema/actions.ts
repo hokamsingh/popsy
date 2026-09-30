@@ -1,10 +1,6 @@
 import { z } from "zod";
 import { isSafeLinkUrl } from "./validation";
 
-/**
- * Actions are data. The builder never knows what "claim_bonus" means: it only
- * emits `{type:"event", name:"claim_bonus"}` and the host application decides.
- */
 export const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("dismiss") }).strict(),
   z
@@ -31,4 +27,3 @@ export const actionSchema = z.discriminatedUnion("type", [
 
 export type Action = z.infer<typeof actionSchema>;
 export type ActionType = Action["type"];
-export const ACTION_TYPES: ActionType[] = ["dismiss", "navigate", "external_url", "event"];

@@ -1,12 +1,6 @@
 import { createEmptyPopup, type Popup, type PopupNode } from "@/schema/popup";
 import type { Style } from "@/design-system/styles";
 
-/**
- * Complexity benchmark fixtures (spec §22): radically different popups built ONLY from
- * generic primitives. If a design can't be expressed here, the gap is a missing
- * capability (layout/content/style/responsive/...), never a reason for a bespoke component.
- */
-
 let seq = 0;
 const node = (
   type: string,
@@ -22,7 +16,7 @@ const node = (
 });
 
 const build = (name: string, settings: Partial<Popup["settings"]>, make: () => PopupNode[]): Popup => {
-  seq = 0; // ids are assigned in call order, so each fixture is deterministic
+  seq = 0;
   const base = createEmptyPopup(name);
   return { ...base, settings: { ...base.settings, ...settings }, children: make() };
 };

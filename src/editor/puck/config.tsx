@@ -5,17 +5,21 @@ import { Badge, Button, Icon, Image, RichText, Text, Video } from "@/components/
 import { Container, Divider, Flex, Grid, Section, Spacer, Stack } from "@/components/layout";
 import { PopupShell } from "@/components/popup/PopupShell";
 import { RuntimeContext } from "@/runtime/context";
+import {
+  ALIGN_VALUES, BADGE_SIZES, BADGE_VARIANTS, BUTTON_SIZES, BUTTON_VARIANTS, COMPONENTS, DECORATIONS,
+  FLEX_DIRECTIONS, ICON_POSITIONS, JUSTIFY_VALUES, LINE_STYLES, LOADING_MODES, OBJECT_FITS,
+  ORIENTATIONS, TEXT_TAGS, TEXT_VARIANTS, VIDEO_OBJECT_FITS,
+} from "@/schema/components";
+import { TEXT_ALIGNS, OVERFLOWS, POSITION_MODES } from "@/design-system/styles";
 import { ANIMATIONS, POSITIONS, settingsSchema, type PopupSettings } from "@/schema/popup";
 import { actionField, boolField, iconField, responsiveField, responsiveToggle, selectField } from "./fields";
 
-/* Puck's generics fight a runtime-driven config; the canonical schema is what guarantees correctness. */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Props = Record<string, any>;
 
 const len = (label: string, placeholder?: string) => responsiveField(label, { placeholder });
 const slot = { type: "slot" } as const;
 
-/** The shared Style model, exposed identically on every component. */
 const styleFields: Fields = {
   style: {
     type: "object",
@@ -28,7 +32,7 @@ const styleFields: Fields = {
       minHeight: len("Min height"),
       maxWidth: len("Max width"),
       color: len("Text color", "e.g. #111 or token:color.text"),
-      textAlign: responsiveField("Text align", { options: ["left", "center", "right", "justify"] }),
+      textAlign: responsiveField("Text align", { options: TEXT_ALIGNS }),
       background: len("Background color", "e.g. #fff or token:color.surface"),
       gradient: len("Gradient", "linear-gradient(135deg, #6366f1, #ec4899)"),
       backgroundImage: { type: "text", label: "Background image URL" },
@@ -38,28 +42,19 @@ const styleFields: Fields = {
       radius: len("Radius", "e.g. 12px or token:radius.md"),
       shadow: len("Shadow", "token:shadow.md"),
       opacity: { type: "number", label: "Opacity (0–1)", min: 0, max: 1 },
-      overflow: responsiveField("Overflow", { options: ["visible", "hidden", "auto", "scroll"] }),
-      position: responsiveField("Position", { options: ["static", "relative", "absolute", "sticky"] }),
+      overflow: responsiveField("Overflow", { options: OVERFLOWS }),
+      position: responsiveField("Position", { options: POSITION_MODES }),
       hidden: responsiveToggle("Hidden"),
     },
   },
 };
 
-const alignField = responsiveField("Align", { options: ["start", "center", "end", "stretch"] });
-const justifyField = responsiveField("Justify", { options: ["start", "center", "end", "between", "around"] });
+const alignField = responsiveField("Align", { options: ALIGN_VALUES });
+const justifyField = responsiveField("Justify", { options: JUSTIFY_VALUES });
 
-/** Puck-injected props that primitives must not receive. */
-const omitPuck = ({ puck: _p, editMode: _e, ...rest }: Props) => rest; // eslint-disable-line @typescript-eslint/no-unused-vars
-
-/** Wraps a runtime primitive so Puck supplies the container element for slot children. */
-function container(Comp: (p: any) => ReactNode): ComponentConfig["render"] {
-  const Render = ({ children, ...props }: Props) => <Comp {...omitPuck(props)} slot={children} />;
-  Render.displayName = "PuckContainer";
-  return Render;
-}
-function leaf(Comp: (p: any) => ReactNode): ComponentConfig["render"] {
-  const Render = (props: Props) => <Comp {...omitPuck(props)} />;
-  Render.displayName = "PuckLeaf";
+function adapt(Comp: (p: any) => ReactNode): ComponentConfig["render"] {
+  const Render = ({ children, ...props }: Props) => <Comp {...props} slot={children} />;
+  Render.displayName = `Puck(${Comp.name})`;
   return Render;
 }
 
@@ -76,23 +71,23 @@ const component = (
 });
 
 const components: Record<string, ComponentConfig> = {
-  Section: component({ children: slot }, container(Section), { style: { padding: "32px" } }),
-  Container: component({ children: slot }, container(Container), { style: { maxWidth: "100%" } }),
+  Section: component({ children: slot }, adapt(Section), { style: { padding: "32px" } }),
+  Container: component({ children: slot }, adapt(Container), { style: { maxWidth: "100%" } }),
   Stack: component(
     { gap: len("Gap", "e.g. 16px"), align: alignField, justify: justifyField, children: slot },
-    container(Stack),
+    adapt(Stack),
     { gap: "16px", align: "stretch" },
   ),
   Flex: component(
     {
-      direction: responsiveField("Direction", { options: ["row", "column", "row-reverse", "column-reverse"] }),
+      direction: responsiveField("Direction", { options: FLEX_DIRECTIONS }),
       wrap: responsiveToggle("Wrap"),
       gap: len("Gap"),
       align: alignField,
       justify: justifyField,
       children: slot,
     },
-    container(Flex),
+    adapt(Flex),
     { direction: "row", gap: "16px", align: "center" },
   ),
   Grid: component(
@@ -104,40 +99,40 @@ const components: Record<string, ComponentConfig> = {
       justify: justifyField,
       children: slot,
     },
-    container(Grid),
+    adapt(Grid),
     { columns: { desktop: "2", mobile: "1" }, gap: "16px" },
   ),
-  Spacer: component({ height: len("Height", "e.g. 24px") }, leaf(Spacer), { height: "24px" }),
+  Spacer: component({ height: len("Height", "e.g. 24px") }, adapt(Spacer), { height: "24px" }),
   Divider: component(
     {
-      orientation: selectField("Orientation", ["horizontal", "vertical"]),
+      orientation: selectField("Orientation", ORIENTATIONS),
       thickness: { type: "text", label: "Thickness" },
-      style: selectField("Line style", ["solid", "dashed", "dotted"]),
+      style: selectField("Line style", LINE_STYLES),
       color: { type: "text", label: "Color" },
       spacing: len("Spacing"),
     },
-    leaf(Divider),
+    adapt(Divider),
     { orientation: "horizontal", thickness: "1px", style: "solid", color: "token:color.border" },
   ),
   Text: component(
     {
       content: { type: "textarea", label: "Content" },
-      variant: selectField("Variant", ["heading", "subheading", "body", "caption", "label"]),
-      tag: selectField("HTML tag", ["h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "div"], true),
+      variant: selectField("Variant", TEXT_VARIANTS),
+      tag: selectField("HTML tag", TEXT_TAGS, true),
       fontFamily: { type: "text", label: "Font family" },
       fontSize: len("Font size"),
       fontWeight: len("Font weight", "400–900"),
       lineHeight: len("Line height"),
       letterSpacing: len("Letter spacing"),
-      align: responsiveField("Alignment", { options: ["left", "center", "right", "justify"] }),
-      decoration: selectField("Decoration", ["none", "underline", "line-through"], true),
+      align: responsiveField("Alignment", { options: TEXT_ALIGNS }),
+      decoration: selectField("Decoration", DECORATIONS, true),
     },
-    leaf(Text),
+    adapt(Text),
     { content: "Your text here", variant: "body" },
   ),
   RichText: component(
     { content: { type: "textarea", label: "Content (**bold** *italic* __underline__ [link](url), - lists)" } },
-    leaf(RichText),
+    adapt(RichText),
     { content: "Write **rich** text with [links](https://example.com)." },
     "Rich Text",
   ),
@@ -145,12 +140,12 @@ const components: Record<string, ComponentConfig> = {
     {
       src: { type: "text", label: "Image URL" },
       alt: { type: "text", label: "Alt text" },
-      objectFit: selectField("Object fit", ["cover", "contain", "fill", "none", "scale-down"], true),
+      objectFit: selectField("Object fit", OBJECT_FITS, true),
       objectPosition: { type: "text", label: "Object position" },
-      loading: selectField("Loading", ["lazy", "eager"]),
+      loading: selectField("Loading", LOADING_MODES),
       action: actionField(),
     },
-    leaf(Image),
+    adapt(Image),
     {
       src: "https://placehold.co/480x240/e2e8f0/64748b?text=Image",
       alt: "",
@@ -167,9 +162,9 @@ const components: Record<string, ComponentConfig> = {
       muted: boolField("Muted"),
       loop: boolField("Loop"),
       aspectRatio: { type: "text", label: "Aspect ratio (16 / 9)" },
-      objectFit: selectField("Object fit", ["cover", "contain", "fill"], true),
+      objectFit: selectField("Object fit", VIDEO_OBJECT_FITS, true),
     },
-    leaf(Video),
+    adapt(Video),
     { src: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm", controls: true, autoplay: false, muted: false, loop: false, aspectRatio: "16 / 9" },
   ),
   Icon: component(
@@ -180,34 +175,36 @@ const components: Record<string, ComponentConfig> = {
       rotation: { type: "number", label: "Rotation (deg)" },
       label: { type: "text", label: "Accessible label" },
     },
-    leaf(Icon),
+    adapt(Icon),
     { name: "star", size: "24px" },
   ),
   Button: component(
     {
       label: { type: "text", label: "Label" },
-      variant: selectField("Variant", ["solid", "outline", "ghost", "link"]),
-      size: selectField("Size", ["sm", "md", "lg"]),
+      variant: selectField("Variant", BUTTON_VARIANTS),
+      size: selectField("Size", BUTTON_SIZES),
       icon: iconField(),
-      iconPosition: selectField("Icon position", ["left", "right"]),
+      iconPosition: selectField("Icon position", ICON_POSITIONS),
       fullWidth: boolField("Full width"),
       disabled: boolField("Disabled"),
       action: actionField(),
     },
-    leaf(Button),
+    adapt(Button),
     { label: "Continue", variant: "solid", size: "md", iconPosition: "left", fullWidth: false, disabled: false, action: { type: "dismiss" } },
   ),
   Badge: component(
     {
       text: { type: "text", label: "Text" },
       icon: iconField(),
-      variant: selectField("Variant", ["solid", "soft", "outline"]),
-      size: selectField("Size", ["sm", "md"]),
+      variant: selectField("Variant", BADGE_VARIANTS),
+      size: selectField("Size", BADGE_SIZES),
     },
-    leaf(Badge),
+    adapt(Badge),
     { text: "New", variant: "soft", size: "md" },
   ),
 };
+
+const EDITING = { run: () => {}, editing: true };
 
 const d = settingsSchema.parse({});
 
@@ -218,13 +215,13 @@ const rootFields: Fields = {
   maxWidth: { type: "text", label: "Max width" },
   height: { type: "text", label: "Height" },
   maxHeight: { type: "text", label: "Max height" },
-  position: selectField("Position", [...POSITIONS]),
+  position: selectField("Position", POSITIONS),
   overlay: boolField("Overlay"),
   overlayColor: { type: "text", label: "Overlay color" },
   background: { type: "text", label: "Background" },
   radius: { type: "text", label: "Radius" },
   shadow: { type: "text", label: "Shadow" },
-  animation: selectField("Animation", [...ANIMATIONS]),
+  animation: selectField("Animation", ANIMATIONS),
   closeOnEscape: boolField("Close on Escape"),
   closeOnOverlayClick: boolField("Close on overlay click"),
   showCloseButton: boolField("Show close button"),
@@ -233,18 +230,16 @@ const rootFields: Fields = {
 
 export const puckConfig: Config = {
   categories: {
-    layout: { title: "Layout", components: ["Section", "Container", "Stack", "Flex", "Grid", "Spacer", "Divider"] },
-    content: { title: "Content", components: ["Text", "RichText", "Image", "Video", "Icon", "Button", "Badge"] },
+    layout: { title: "Layout", components: COMPONENTS.filter((c) => c.category === "layout").map((c) => c.editorKey) },
+    content: { title: "Content", components: COMPONENTS.filter((c) => c.category === "content").map((c) => c.editorKey) },
   },
   root: {
     fields: rootFields,
     defaultProps: { name: "", ...d },
-    // The shell renders inline in the canvas; actions are inert while editing.
     render: function PopupRoot({ children, ...props }: Props) {
-      const { name: _name, ...settings } = omitPuck(props); // eslint-disable-line @typescript-eslint/no-unused-vars
       return (
-        <RuntimeContext.Provider value={{ run: () => {}, editing: true }}>
-          <PopupShell settings={settings as PopupSettings} mode="inline">
+        <RuntimeContext.Provider value={EDITING}>
+          <PopupShell settings={props as PopupSettings} mode="inline">
             {children}
           </PopupShell>
         </RuntimeContext.Provider>

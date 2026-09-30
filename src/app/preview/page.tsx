@@ -15,7 +15,6 @@ function Preview() {
   const [log, setLog] = useState<string[]>([]);
 
   const note = useCallback((line: string) => setLog((l) => [...l.slice(-3), line]), []);
-  // Stable identity so the renderer's action runtime isn't rebuilt every render.
   const actions = useMemo(
     () => ({
       onEvent: (name: string, payload?: Record<string, unknown>) => note(`event: ${name} ${payload ? JSON.stringify(payload) : ""}`),
@@ -45,7 +44,6 @@ function Preview() {
   );
 }
 
-// Reads localStorage and the query string, so it renders on the client only.
 const ClientPreview = dynamic(() => Promise.resolve(Preview), { ssr: false });
 
 export default function PreviewPage() {

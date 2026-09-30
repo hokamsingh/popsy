@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { isTokenName } from "@/design-system/tokens";
-import { isSafeCssValue, NODE_ID } from "./validation";
+import { NODE_ID } from "./validation";
 import { COMPONENT_MAP } from "./components";
-import { styleSchema, type Style } from "@/design-system/styles";
+import { cssValue as css, styleSchema, type Style } from "@/design-system/styles";
 import { CURRENT_VERSION, migratePopup } from "./migrations";
 
 export { CURRENT_VERSION };
@@ -13,9 +13,6 @@ export const POSITIONS = [
 ] as const;
 export const ANIMATIONS = ["none", "fade", "scale", "slide-up", "slide-down"] as const;
 
-const css = z.string().max(500).refine(isSafeCssValue, "unsafe CSS value");
-
-/** Popup-level settings owned by PopupShell. The shell knows nothing about content. */
 export const settingsSchema = z
   .object({
     title: z.string().max(200).default("Popup"),
@@ -35,7 +32,6 @@ export const settingsSchema = z
     showCloseButton: z.boolean().default(true),
     lockScroll: z.boolean().default(true),
     zIndex: z.number().int().min(0).max(2147483647).default(1000),
-    /** Custom token overrides, e.g. {"color.primary": "#ff0066"}. */
     tokens: z
       .record(z.string().refine(isTokenName, "invalid token name"), css)
       .default({}),
@@ -97,11 +93,6 @@ export type ParseResult =
 const fmtPath = (path: ReadonlyArray<PropertyKey>) =>
   path.reduce<string>((acc, p) => (typeof p === "number" ? `${acc}[${p}]` : acc ? `${acc}.${String(p)}` : String(p)), "");
 
-/**
- * Validates a canonical popup document. Beyond structural checks it verifies every
- * node's props against the component registry, child permissions, and id uniqueness.
- * On success, props are normalized (defaults applied).
- */
 export function parsePopup(input: unknown): ParseResult {
   const migrated = migratePopup(input);
   if (!migrated.success) return migrated;
@@ -148,9 +139,6 @@ export function parsePopup(input: unknown): ParseResult {
   return { success: true, data: { ...popup, children } };
 }
 
-export const isValidPopup = (input: unknown) => parsePopup(input).success;
-
-/** An empty but valid popup. */
 export function createEmptyPopup(name = "Untitled popup"): Popup {
   return {
     version: CURRENT_VERSION,

@@ -1,14 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import { isSafeLinkUrl } from "@/schema/validation";
 
-/**
- * Safe rich text. The source is a tiny markup language that is parsed into React
- * elements, so no HTML string is ever injected into the DOM.
- *
- *   **bold**  *italic*  __underline__  [label](https://url)
- *   lines starting with "- " form a list; blank lines separate paragraphs.
- */
-
 export type Inline =
   | { kind: "text"; text: string }
   | { kind: "bold" | "italic" | "underline"; children: Inline[] }
@@ -35,7 +27,7 @@ export function parseInline(src: string): Inline[] {
     else if (m[2] !== undefined) out.push({ kind: "underline", children: parseInline(m[2]) });
     else if (m[3] !== undefined) out.push({ kind: "italic", children: parseInline(m[3]) });
     else if (isSafeLinkUrl(m[5])) out.push({ kind: "link", href: m[5], children: parseInline(m[4]) });
-    else out.push({ kind: "text", text: m[4] }); // unsafe link degrades to plain text
+    else out.push({ kind: "text", text: m[4] });
     rest = rest.slice(m.index + m[0].length);
   }
   return out;

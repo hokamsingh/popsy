@@ -4,7 +4,6 @@ import type { Action } from "@/schema/actions";
 
 export interface RuntimeContextValue {
   run: (action: Action | undefined) => void;
-  /** True inside the editor canvas, where actions must not fire. */
   editing: boolean;
 }
 

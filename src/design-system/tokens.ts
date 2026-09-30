@@ -1,4 +1,3 @@
-/** Design tokens. Any style value may be a token reference (`token:color.primary`) or a raw value. */
 
 export const defaultTokens: Record<string, string> = {
   "color.primary": "#4f46e5",
@@ -34,15 +33,15 @@ export const isTokenName = (name: string) => TOKEN_NAME.test(name);
 
 export const tokenVar = (name: string) => `--pp-${name.replace(/\./g, "-")}`;
 
-/** Replaces every `token:x.y` in a value with `var(--pp-x-y)`. */
 export function resolveTokens(value: string): string {
   return value.replace(TOKEN_REF, (_, name: string) => `var(${tokenVar(name)})`);
 }
 
-/** CSS custom properties for the popup root; custom tokens override defaults. */
+const toVars = (tokens: Record<string, string>) =>
+  Object.fromEntries(Object.entries(tokens).map(([name, value]) => [tokenVar(name), value]));
+
+const defaultVars = toVars(defaultTokens);
+
 export function tokensToCssVars(custom: Record<string, string> = {}): Record<string, string> {
-  const merged = { ...defaultTokens, ...custom };
-  const vars: Record<string, string> = {};
-  for (const [name, value] of Object.entries(merged)) vars[tokenVar(name)] = value;
-  return vars;
+  return { ...defaultVars, ...toVars(custom) };
 }

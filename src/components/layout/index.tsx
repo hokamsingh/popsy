@@ -1,5 +1,5 @@
-import { Frame, mapEnum, mapR, type NodeBaseProps } from "../frame";
-import type { Responsive } from "@/design-system/responsive";
+import { Frame, toCssAlignment, type NodeBaseProps } from "../frame";
+import { mapResponsive, type Responsive } from "@/design-system/responsive";
 
 type Align = Responsive<"start" | "center" | "end" | "stretch">;
 type Justify = Responsive<"start" | "center" | "end" | "between" | "around">;
@@ -12,7 +12,7 @@ export function Section(p: NodeBaseProps) {
       as="section"
       kind="section"
       minEmptyHeight={48}
-      decls={{ width: "100%", position: "relative", "box-sizing": "border-box" }}
+      cssProps={{ width: "100%", position: "relative", "box-sizing": "border-box" }}
     />
   );
 }
@@ -23,7 +23,7 @@ export function Container(p: NodeBaseProps) {
       {...p}
       kind="container"
       minEmptyHeight={48}
-      decls={{ width: "100%", "margin-left": "auto", "margin-right": "auto", "box-sizing": "border-box" }}
+      cssProps={{ width: "100%", "margin-left": "auto", "margin-right": "auto", "box-sizing": "border-box" }}
     />
   );
 }
@@ -34,12 +34,12 @@ export function Stack({ gap, align, justify, ...p }: NodeBaseProps & { gap?: Css
       {...p}
       kind="stack"
       minEmptyHeight={48}
-      decls={{
+      cssProps={{
         display: "flex",
         "flex-direction": "column",
         gap,
-        "align-items": mapEnum(align),
-        "justify-content": mapEnum(justify),
+        "align-items": toCssAlignment(align),
+        "justify-content": toCssAlignment(justify),
       }}
     />
   );
@@ -64,19 +64,18 @@ export function Flex({
       {...p}
       kind="flex"
       minEmptyHeight={48}
-      decls={{
+      cssProps={{
         display: "flex",
         "flex-direction": direction,
-        "flex-wrap": mapR(wrap, (w) => (w ? "wrap" : "nowrap")),
+        "flex-wrap": mapResponsive(wrap, (w) => (w ? "wrap" : "nowrap")),
         gap,
-        "align-items": mapEnum(align),
-        "justify-content": mapEnum(justify),
+        "align-items": toCssAlignment(align),
+        "justify-content": toCssAlignment(justify),
       }}
     />
   );
 }
 
-/** "3" → repeat(3, minmax(0, 1fr)); anything else is used as a track list. */
 const tracks = (v: string) => (/^\d+$/.test(v.trim()) ? `repeat(${v.trim()}, minmax(0, 1fr))` : v);
 
 export function Grid({
@@ -92,20 +91,20 @@ export function Grid({
       {...p}
       kind="grid"
       minEmptyHeight={48}
-      decls={{
+      cssProps={{
         display: "grid",
-        "grid-template-columns": mapR(columns, tracks),
-        "grid-template-rows": mapR(rows, tracks),
+        "grid-template-columns": mapResponsive(columns, tracks),
+        "grid-template-rows": mapResponsive(rows, tracks),
         gap,
-        "align-items": mapEnum(align),
-        "justify-items": mapEnum(justify, { start: "start", center: "center", end: "end", stretch: "stretch" }),
+        "align-items": toCssAlignment(align),
+        "justify-items": justify,
       }}
     />
   );
 }
 
 export function Spacer({ height, ...p }: NodeBaseProps & { height?: Css }) {
-  return <Frame {...p} kind="spacer" attrs={{ "aria-hidden": true }} decls={{ height: height ?? "16px", width: "100%", "flex-shrink": "0" }} />;
+  return <Frame {...p} kind="spacer" attrs={{ "aria-hidden": true }} cssProps={{ height: height ?? "16px", width: "100%", "flex-shrink": "0" }} />;
 }
 
 export function Divider({
@@ -129,10 +128,10 @@ export function Divider({
       as="hr"
       kind="divider"
       attrs={{ role: "separator", "aria-orientation": orientation }}
-      decls={{
+      cssProps={{
         border: "0",
         [vertical ? "border-left" : "border-top"]: `${thickness} ${lineStyle} ${color}`,
-        margin: mapR(spacing, (x) => `${x} 0`) ?? "0",
+        margin: mapResponsive(spacing, (x) => `${x} 0`) ?? "0",
         "align-self": vertical ? "stretch" : undefined,
         width: vertical ? "0" : "100%",
         "box-sizing": "border-box",

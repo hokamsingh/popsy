@@ -1,13 +1,8 @@
-/**
- * Schema versioning. Each entry upgrades a document from version N to N+1.
- * Migrations operate on raw JSON so they can run before validation.
- */
 export const CURRENT_VERSION = 1;
 
 type Doc = Record<string, unknown>;
 type Migration = (doc: Doc) => Doc;
 
-/** migrations[n] upgrades version n → n+1. Empty until a breaking change ships. */
 const migrations: Record<number, Migration> = {};
 
 export type MigrateResult =

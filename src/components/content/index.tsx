@@ -1,12 +1,12 @@
 "use client";
-import type { CSSProperties, ElementType } from "react";
-import { Frame, mapR, type NodeBaseProps } from "../frame";
+import { useMemo, type ElementType } from "react";
+import { Frame, type NodeBaseProps } from "../frame";
 import { ICONS } from "./icons";
 import { renderRichText } from "@/runtime/richtext";
 import { useRuntime } from "@/runtime/context";
 import type { Action } from "@/schema/actions";
 import type { IconName } from "@/schema/components";
-import type { Responsive } from "@/design-system/responsive";
+import { mapResponsive, type Responsive } from "@/design-system/responsive";
 
 type Css = Responsive<string>;
 
@@ -42,17 +42,17 @@ export function Text({
   align?: Responsive<string>;
   decoration?: string;
 }) {
-  const v = VARIANTS[variant] ?? VARIANTS.body;
+  const v = VARIANTS[variant];
   return (
     <Frame
       {...p}
       as={(tag ?? v.tag) as ElementType}
       kind="text"
-      decls={{
+      cssProps={{
         margin: "0",
         "font-family": fontFamily ?? v.family,
         "font-size": fontSize ?? v.size,
-        "font-weight": mapR(fontWeight, String) ?? String(v.weight),
+        "font-weight": mapResponsive(fontWeight, String) ?? String(v.weight),
         "line-height": lineHeight ?? v.line,
         "letter-spacing": letterSpacing,
         "text-align": align,
@@ -66,30 +66,26 @@ export function Text({
   );
 }
 
+const richTextRules = (sel: string) =>
+  `${sel} p{margin:0 0 .75em}${sel} p:last-child{margin-bottom:0}${sel} ul{margin:0 0 .75em;padding-left:1.25em}${sel} a{color:var(--pp-color-primary);text-decoration:underline}`;
+
 export function RichText({ content = "", ...p }: NodeBaseProps & { content?: string }) {
+  const body = useMemo(() => renderRichText(content), [content]);
   return (
     <Frame
       {...p}
       kind="richtext"
-      decls={{ "font-family": "token:font.body", "font-size": "16px", "line-height": "1.5" }}
-      attrs={{ "data-richtext": "" }}
+      cssProps={{ "font-family": "token:font.body", "font-size": "16px", "line-height": "1.5" }}
+      nested={richTextRules}
     >
-      <RichTextStyles id={p.id} />
-      {renderRichText(content)}
+      {body}
     </Frame>
   );
 }
 
-function RichTextStyles({ id }: { id: string }) {
-  const sel = `.pp-${id.replace(/[^A-Za-z0-9_-]/g, "_")}`;
-  return <style>{`${sel} p{margin:0 0 .75em}${sel} p:last-child{margin-bottom:0}${sel} ul{margin:0 0 .75em;padding-left:1.25em}${sel} a{color:var(--pp-color-primary);text-decoration:underline}`}</style>;
-}
-
-function useActionProps(action: Action | undefined) {
+function useActionHandler(action: Action | undefined) {
   const { run, editing } = useRuntime();
-  return {
-    onClick: editing || !action ? undefined : () => run(action),
-  };
+  return editing || !action ? undefined : () => run(action);
 }
 
 export function Image({
@@ -108,7 +104,7 @@ export function Image({
   loading?: "lazy" | "eager";
   action?: Action;
 }) {
-  const click = useActionProps(action);
+  const onClick = useActionHandler(action);
   return (
     <Frame
       {...p}
@@ -120,10 +116,11 @@ export function Image({
         loading,
         draggable: false,
         role: alt === "" ? "presentation" : undefined,
-        ...(action ? { onClick: click.onClick, style: { cursor: "pointer" } as CSSProperties } : {}),
+        onClick,
       }}
-      decls={{
+      cssProps={{
         display: "block",
+        cursor: action ? "pointer" : undefined,
         "max-width": "100%",
         "object-fit": objectFit,
         "object-position": objectPosition,
@@ -162,14 +159,13 @@ export function Video({
         src,
         poster,
         controls,
-        // Browsers only allow autoplay when muted; never autoplay inside the editor.
         autoPlay: autoplay && !editing,
         muted: muted || (autoplay && !editing),
         loop,
         playsInline: true,
         preload: "metadata",
       }}
-      decls={{ display: "block", width: "100%", "aspect-ratio": aspectRatio, "object-fit": objectFit }}
+      cssProps={{ display: "block", width: "100%", "aspect-ratio": aspectRatio, "object-fit": objectFit }}
     />
   );
 }
@@ -183,14 +179,13 @@ export function Icon({
   ...p
 }: NodeBaseProps & { name: IconName; size?: Css; color?: string; rotation?: number; label?: string }) {
   const Glyph = ICONS[name];
-  if (!Glyph) return null;
   return (
     <Frame
       {...p}
       as="span"
       kind="icon"
       attrs={{ role: label ? "img" : undefined, "aria-label": label, "aria-hidden": label ? undefined : true }}
-      decls={{
+      cssProps={{
         display: "inline-flex",
         width: size,
         height: size,
@@ -203,6 +198,19 @@ export function Icon({
     </Frame>
   );
 }
+
+const TONES = {
+  solid: { background: "token:color.primary", color: "token:color.primary-contrast", border: "1px solid transparent" },
+  outline: { background: "transparent", color: "token:color.primary", border: "1px solid token:color.primary" },
+  soft: { background: "color-mix(in srgb, var(--pp-color-primary) 14%, transparent)", color: "token:color.primary", border: "1px solid transparent" },
+} as const;
+const BUTTON_LOOKS = {
+  solid: TONES.solid,
+  outline: TONES.outline,
+  ghost: { ...TONES.outline, border: "1px solid transparent", color: "token:color.primary", background: "transparent" },
+  link: { background: "transparent", color: "token:color.primary", border: "0" },
+} as const;
+const BADGE_LOOKS = TONES;
 
 const BUTTON_SIZES = {
   sm: { pad: "6px 12px", font: "13px" },
@@ -230,22 +238,17 @@ export function Button({
   disabled?: boolean;
   action?: Action;
 }) {
-  const click = useActionProps(action);
+  const onClick = useActionHandler(action);
   const s = BUTTON_SIZES[size];
   const Glyph = icon ? ICONS[icon] : null;
-  const look = {
-    solid: { background: "token:color.primary", color: "token:color.primary-contrast", border: "1px solid transparent" },
-    outline: { background: "transparent", color: "token:color.primary", border: "1px solid token:color.primary" },
-    ghost: { background: "transparent", color: "token:color.primary", border: "1px solid transparent" },
-    link: { background: "transparent", color: "token:color.primary", border: "0" },
-  }[variant];
+  const look = BUTTON_LOOKS[variant];
   return (
     <Frame
       {...p}
       as="button"
       kind="button"
-      attrs={{ type: "button", disabled, onClick: click.onClick }}
-      decls={{
+      attrs={{ type: "button", disabled, onClick }}
+      cssProps={{
         display: fullWidth ? "flex" : "inline-flex",
         width: fullWidth ? "100%" : undefined,
         "align-items": "center",
@@ -278,17 +281,13 @@ export function Badge({
   ...p
 }: NodeBaseProps & { text?: string; icon?: IconName; variant?: "solid" | "soft" | "outline"; size?: "sm" | "md" }) {
   const Glyph = icon ? ICONS[icon] : null;
-  const look = {
-    solid: { background: "token:color.primary", color: "token:color.primary-contrast", border: "1px solid transparent" },
-    soft: { background: "color-mix(in srgb, var(--pp-color-primary) 14%, transparent)", color: "token:color.primary", border: "1px solid transparent" },
-    outline: { background: "transparent", color: "token:color.primary", border: "1px solid token:color.primary" },
-  }[variant];
+  const look = BADGE_LOOKS[variant];
   return (
     <Frame
       {...p}
       as="span"
       kind="badge"
-      decls={{
+      cssProps={{
         display: "inline-flex",
         "align-items": "center",
         gap: "4px",

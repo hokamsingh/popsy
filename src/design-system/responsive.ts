@@ -1,7 +1,6 @@
 export const BREAKPOINTS = ["desktop", "tablet", "mobile"] as const;
 export type Breakpoint = (typeof BREAKPOINTS)[number];
 
-/** Desktop is the base; tablet and mobile override downward (max-width). */
 export const BREAKPOINT_WIDTHS = { tablet: 1024, mobile: 640 } as const;
 
 export type ResponsiveObject<T> = Partial<Record<Breakpoint, T>>;
@@ -11,13 +10,17 @@ export function isResponsiveObject<T>(v: Responsive<T>): v is ResponsiveObject<T
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-/** Raw per-breakpoint values, without inheritance applied. */
+export function mapResponsive<T, U>(v: Responsive<T> | undefined, fn: (x: T) => U): Responsive<U> | undefined {
+  if (v === undefined) return undefined;
+  if (!isResponsiveObject(v)) return fn(v);
+  return Object.fromEntries(Object.entries(v).map(([bp, x]) => [bp, fn(x as T)])) as ResponsiveObject<U>;
+}
+
 export function expandResponsive<T>(v: Responsive<T> | undefined): ResponsiveObject<T> {
   if (v === undefined) return {};
   return isResponsiveObject(v) ? v : { desktop: v as T };
 }
 
-/** Per-breakpoint values with cascade: mobile ← tablet ← desktop. */
 export function resolveResponsive<T>(v: Responsive<T> | undefined): ResponsiveObject<T> {
   const { desktop, tablet, mobile } = expandResponsive(v);
   const t = tablet ?? desktop;

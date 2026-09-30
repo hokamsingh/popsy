@@ -1,15 +1,14 @@
 "use client";
-import { useEffect, useMemo, type ReactNode } from "react";
+import { memo, useEffect, useMemo, type ReactNode } from "react";
 import { Badge, Button, Icon, Image, RichText, Text, Video } from "@/components/content";
 import { Container, Divider, Flex, Grid, Section, Spacer, Stack } from "@/components/layout";
 import { PopupShell, type ShellMode } from "@/components/popup/PopupShell";
-import type { Popup, PopupNode } from "@/schema/popup";
-import { parsePopup } from "@/schema/popup";
+import { parsePopup, type PopupNode } from "@/schema/popup";
 import { createActionRuntime, type ActionRuntimeOptions } from "./actions";
 import { RuntimeContext } from "./context";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const RENDERERS: Record<string, (props: any) => ReactNode> = {
+const COMPONENT_BY_TYPE: Record<string, (props: any) => ReactNode> = {
   section: Section,
   container: Container,
   stack: Stack,
@@ -26,8 +25,8 @@ export const RENDERERS: Record<string, (props: any) => ReactNode> = {
   badge: Badge,
 };
 
-export function renderNode(node: PopupNode): ReactNode {
-  const Component = RENDERERS[node.type];
+function renderNode(node: PopupNode): ReactNode {
+  const Component = COMPONENT_BY_TYPE[node.type];
   if (!Component) return null;
   return (
     <Component key={node.id} id={node.id} style={node.style} {...node.props}>
@@ -37,19 +36,16 @@ export function renderNode(node: PopupNode): ReactNode {
 }
 
 export interface PopupRendererProps {
-  /** A canonical popup. Validated on every render; invalid documents render nothing. */
-  popup: Popup | unknown;
+  popup: unknown;
   mode?: ShellMode;
   open?: boolean;
   onDismiss?: () => void;
-  /** Host-provided action implementations (domain actions, navigation, ...). */
   actions?: Omit<ActionRuntimeOptions, "onDismiss">;
-  /** Disables action execution, e.g. for static previews. */
   editing?: boolean;
   onInvalid?: (errors: { path: string; message: string }[]) => void;
 }
 
-export function PopupRenderer({
+export const PopupRenderer = memo(function PopupRenderer({
   popup,
   mode = "overlay",
   open = true,
@@ -59,26 +55,25 @@ export function PopupRenderer({
   onInvalid,
 }: PopupRendererProps) {
   const parsed = useMemo(() => parsePopup(popup), [popup]);
-  const runtime = useMemo(
-    () => createActionRuntime({ ...actions, onDismiss }),
-    [actions, onDismiss],
-  );
-  const ctx = useMemo(
-    () => ({ run: (a: Parameters<typeof runtime.run>[0]) => void runtime.run(a), editing }),
-    [runtime, editing],
-  );
+
+  const contextValue = useMemo(() => {
+    const runtime = createActionRuntime({ ...actions, onDismiss });
+    return { run: (action: Parameters<typeof runtime.run>[0]) => void runtime.run(action), editing };
+  }, [actions, onDismiss, editing]);
+
+  const content = useMemo(() => (parsed.success ? parsed.data.children.map(renderNode) : null), [parsed]);
 
   useEffect(() => {
     if (!parsed.success) onInvalid?.(parsed.errors);
   }, [parsed, onInvalid]);
 
   if (!parsed.success) return null;
-  const { settings, children } = parsed.data;
+
   return (
-    <RuntimeContext.Provider value={ctx}>
-      <PopupShell settings={settings} mode={mode} open={open} onDismiss={onDismiss}>
-        {children.map(renderNode)}
+    <RuntimeContext.Provider value={contextValue}>
+      <PopupShell settings={parsed.data.settings} mode={mode} open={open} onDismiss={onDismiss}>
+        {content}
       </PopupShell>
     </RuntimeContext.Provider>
   );
-}
+});

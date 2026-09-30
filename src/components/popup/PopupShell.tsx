@@ -1,21 +1,22 @@
 "use client";
-import { useCallback, useEffect, useId, useRef, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { tokensToCssVars, resolveTokens } from "@/design-system/tokens";
 import type { PopupSettings } from "@/schema/popup";
+
+type Position = PopupSettings["position"];
 
 export type ShellMode = "overlay" | "inline";
 
 export interface PopupShellProps {
   settings: PopupSettings;
-  /** `overlay` is the production popup; `inline` renders the dialog in flow (editor/preview canvas). */
   mode?: ShellMode;
   open?: boolean;
   onDismiss?: () => void;
   children?: ReactNode;
 }
 
-const PLACEMENT: Record<string, { justify: string; align: string }> = {
+const PLACEMENT: Record<Position, { justify: string; align: string }> = {
   center: { justify: "center", align: "center" },
   top: { justify: "center", align: "flex-start" },
   bottom: { justify: "center", align: "flex-end" },
@@ -27,7 +28,6 @@ const PLACEMENT: Record<string, { justify: string; align: string }> = {
   "bottom-right": { justify: "flex-end", align: "flex-end" },
 };
 
-/** Shell animations; all of them are disabled under prefers-reduced-motion. */
 const SHELL_CSS = `
 @keyframes pp-fade{from{opacity:0}to{opacity:1}}
 @keyframes pp-scale{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
@@ -46,19 +46,11 @@ const SHELL_CSS = `
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),video[controls],[tabindex]:not([tabindex="-1"])';
 
-/**
- * Owns everything dialog-level: viewport placement, overlay, size limits,
- * scrolling, animation, focus trap, Escape, and dismissal. It knows nothing
- * about what the popup says.
- */
 export function PopupShell({ settings: s, mode = "overlay", open = true, onDismiss, children }: PopupShellProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const overlayMode = mode === "overlay";
 
-  const dismiss = useCallback(() => onDismiss?.(), [onDismiss]);
-
-  // Focus management + scroll lock (overlay only).
   useEffect(() => {
     if (!overlayMode || !open) return;
     const previous = document.activeElement as HTMLElement | null;
@@ -78,7 +70,7 @@ export function PopupShell({ settings: s, mode = "overlay", open = true, onDismi
     if (!overlayMode) return;
     if (e.key === "Escape" && s.closeOnEscape) {
       e.stopPropagation();
-      dismiss();
+      onDismiss?.();
       return;
     }
     if (e.key !== "Tab") return;
@@ -100,7 +92,7 @@ export function PopupShell({ settings: s, mode = "overlay", open = true, onDismi
     }
   };
 
-  const place = PLACEMENT[s.position] ?? PLACEMENT.center;
+  const place = PLACEMENT[s.position];
   const tokenVars = tokensToCssVars(s.tokens) as CSSProperties;
 
   const dialogStyle: CSSProperties = {
@@ -135,7 +127,7 @@ export function PopupShell({ settings: s, mode = "overlay", open = true, onDismi
         {s.title}
       </span>
       {s.showCloseButton ? (
-        <button type="button" className="pp-shell-close" aria-label="Close" onClick={dismiss}>
+        <button type="button" className="pp-shell-close" aria-label="Close" onClick={() => onDismiss?.()}>
           <X size={18} aria-hidden />
         </button>
       ) : null}
@@ -157,7 +149,7 @@ export function PopupShell({ settings: s, mode = "overlay", open = true, onDismi
       data-pp-root=""
       onKeyDown={onKeyDown}
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget && s.closeOnOverlayClick) dismiss();
+        if (e.target === e.currentTarget && s.closeOnOverlayClick) onDismiss?.();
       }}
       style={{
         ...tokenVars,
@@ -169,7 +161,6 @@ export function PopupShell({ settings: s, mode = "overlay", open = true, onDismi
         alignItems: place.align,
         padding: 16,
         boxSizing: "border-box",
-        // With overlay off, the backdrop must not block the page behind the popup.
         background: s.overlay ? resolveTokens(s.overlayColor) : "transparent",
         pointerEvents: s.overlay ? "auto" : "none",
       }}
