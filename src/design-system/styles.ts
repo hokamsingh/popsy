@@ -48,6 +48,7 @@ export const styleSchema = z
     textAlign: responsive(z.enum(TEXT_ALIGNS)),
     background: css,
     gradient: css,
+    textGradient: css,
     backgroundImage: z.string().refine(isSafeAssetUrl, "unsafe or invalid URL"),
     backgroundSize: css,
     backgroundPosition: css,
@@ -123,6 +124,14 @@ export function buildCss(selector: string, cssProps: CssProps = {}, style: Style
   }
   if (style.backgroundImage && isSafeAssetUrl(style.backgroundImage) && !style.gradient) {
     perBp.desktop.push(["background-image", `url("${encodeURI(style.backgroundImage).replace(/"/g, "%22")}")`]);
+  }
+
+  if (style.textGradient !== undefined) {
+    const gradient = expandResponsive(style.textGradient).desktop;
+    const safe = gradient && isSafeCssValue(gradient) ? resolveTokens(gradient) : undefined;
+    if (safe) {
+      perBp.desktop.push(["background-image", safe], ["-webkit-background-clip", "text"], ["background-clip", "text"], ["color", "transparent"]);
+    }
   }
 
   const out: string[] = [];

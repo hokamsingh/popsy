@@ -181,6 +181,30 @@ export const countdown = () =>
     ]),
   ]);
 
+export const cardlessGlass = () =>
+  build(
+    "Popup without a card",
+    {
+      width: "440px",
+      background: "transparent",
+      shadow: "none",
+      overlayColor: "rgba(8, 6, 40, 0.72)",
+      overlayBlur: "blur(14px)",
+      closeButtonColor: "#ffffff",
+    },
+    () => [
+      node("section", {}, { padding: "16px", color: "#ffffff" }, [
+        node("stack", { gap: "14px", align: "center" }, undefined, [
+          node("text", { content: "Super value", variant: "heading", align: "center", textTransform: "uppercase", fontSize: "40px", lineHeight: "1" }),
+          node("text", { content: "Coin package", variant: "heading", align: "center", textTransform: "uppercase", fontSize: "40px", lineHeight: "1" }, { textGradient: "linear-gradient(135deg, #a78bfa, #ec4899)" }),
+          node("text", { content: "Kick start your winning journey with our best offer just for you", align: "center", textTransform: "uppercase", letterSpacing: "0.08em", fontSize: "14px" }, { color: "rgba(255,255,255,0.75)" }),
+          node("icon", { name: "gift", size: "120px" }, { color: "#fbbf24" }),
+          node("button", { label: "Buy now", size: "lg", fullWidth: true, action: { type: "event", name: "buy_now" } }, { gradient: "linear-gradient(90deg, #4f46e5, #c084fc)", radius: "token:radius.md" }),
+        ]),
+      ]),
+    ],
+  );
+
 export const heroDemo = () =>
   build("Home hero demo", { width: "400px", background: "transparent", shadow: "none", showCloseButton: false }, () => [
     node("section", {}, { padding: "8px" }, [
@@ -217,4 +241,5 @@ export const BENCHMARKS: Record<string, () => Popup> = {
   glassmorphism,
   countdown,
   "layered-image": layeredImage,
+  "popup-without-card": cardlessGlass,
 };

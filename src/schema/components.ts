@@ -9,6 +9,7 @@ export const ALIGN_VALUES = ["start", "center", "end", "stretch"] as const;
 export const JUSTIFY_VALUES = ["start", "center", "end", "between", "around"] as const;
 export const TEXT_VARIANTS = ["heading", "subheading", "body", "caption", "label"] as const;
 export const TEXT_TAGS = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "div"] as const;
+export const TEXT_TRANSFORMS = ["none", "uppercase", "capitalize", "lowercase"] as const;
 export const DECORATIONS = ["none", "underline", "line-through"] as const;
 export const OBJECT_FITS = ["cover", "contain", "fill", "none", "scale-down"] as const;
 export const VIDEO_OBJECT_FITS = ["cover", "contain", "fill"] as const;
@@ -48,6 +49,7 @@ export const textProps = z
     letterSpacing: cssR.optional(),
     align: responsive(z.enum(TEXT_ALIGNS)).optional(),
     decoration: z.enum(DECORATIONS).optional(),
+    textTransform: z.enum(TEXT_TRANSFORMS).optional(),
   })
   .strict();
 

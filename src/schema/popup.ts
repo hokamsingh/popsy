@@ -24,6 +24,7 @@ export const settingsSchema = z
     overlay: z.boolean().default(true),
     overlayColor: css.default("rgba(15,23,42,0.55)"),
     overlayBlur: css.optional(),
+    closeButtonColor: css.optional(),
     background: css.default("token:color.background"),
     radius: css.default("token:radius.lg"),
     shadow: css.default("token:shadow.lg"),

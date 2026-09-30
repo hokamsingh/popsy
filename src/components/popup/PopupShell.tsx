@@ -37,8 +37,8 @@ const SHELL_CSS = `
 .pp-anim-scale{animation:pp-scale .2s ease-out both}
 .pp-anim-slide-up{animation:pp-slide-up .25s ease-out both}
 .pp-anim-slide-down{animation:pp-slide-down .25s ease-out both}
-.pp-shell-close{position:absolute;top:8px;right:8px;z-index:2;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:0;border-radius:9999px;background:rgba(15,23,42,.08);color:#0f172a;cursor:pointer}
-.pp-shell-close:hover{background:rgba(15,23,42,.16)}
+.pp-shell-close{position:absolute;top:8px;right:8px;z-index:2;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:0;border-radius:9999px;background:color-mix(in srgb,currentColor 10%,transparent);color:var(--pp-close-color,#0f172a);cursor:pointer}
+.pp-shell-close:hover{background:color-mix(in srgb,currentColor 22%,transparent)}
 .pp-shell-close:focus-visible,[data-pp-dialog] :focus-visible{outline:2px solid var(--pp-color-primary);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.pp-anim-fade,.pp-anim-scale,.pp-anim-slide-up,.pp-anim-slide-down{animation:none}}
 `;
@@ -95,6 +95,8 @@ export function PopupShell({ settings: s, mode = "overlay", open = true, onDismi
   const place = PLACEMENT[s.position];
   const tokenVars = tokensToCssVars(s.tokens) as CSSProperties;
 
+  const closeButtonVariable = (s.closeButtonColor ? { "--pp-close-color": resolveTokens(s.closeButtonColor) } : {}) as CSSProperties;
+
   const dialogStyle: CSSProperties = {
     position: "relative",
     boxSizing: "border-box",
@@ -109,6 +111,7 @@ export function PopupShell({ settings: s, mode = "overlay", open = true, onDismi
     color: "var(--pp-color-text)",
     fontFamily: "var(--pp-font-body)",
     outline: "none",
+    ...closeButtonVariable,
     margin: overlayMode ? undefined : "0 auto",
   };
 

@@ -133,5 +133,16 @@ describe("PopupRenderer", () => {
     expect(css).toMatch(/:has\(> \.pp-[^)]*-s\)/);
     expect(css).not.toMatch(/:has\(> \.pp-[^)]*-t\)/);
   });
+
+  it("lets a popup drop its card and recolour the close button", () => {
+    const popup: Popup = {
+      ...createEmptyPopup(),
+      settings: { ...createEmptyPopup().settings, background: "transparent", shadow: "none", closeButtonColor: "#ffffff" },
+    };
+    const { container } = render(<PopupRenderer popup={popup} />);
+    const dialog = container.querySelector("[data-pp-dialog]") as HTMLElement;
+    expect(dialog.style.background).toContain("transparent");
+    expect(dialog.style.getPropertyValue("--pp-close-color")).toBe("#ffffff");
+  });
 });
 

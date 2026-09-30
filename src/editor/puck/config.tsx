@@ -74,6 +74,12 @@ const DECORATION_CHOICES: Choice<string>[] = [
   { value: "line-through", label: "Strikethrough" },
 ];
 
+const TEXT_TRANSFORM_CHOICES: Choice<string>[] = [
+  { value: "uppercase", label: "UPPERCASE" },
+  { value: "capitalize", label: "Title Case" },
+  { value: "lowercase", label: "lowercase" },
+];
+
 const IMAGE_FIT_CHOICES: Choice<string>[] = [
   { value: "cover", label: "Fill the space" },
   { value: "contain", label: "Fit inside" },
@@ -291,6 +297,7 @@ const components: Record<string, ComponentConfig> = {
       align: choiceField("Alignment", TEXT_ALIGN_CHOICES, { perDevice: true, unsetLabel: "Default" }),
       lineHeight: numberField("Line spacing", { step: 0.1, min: 0.8, max: 3, hint: "1.5 is comfortable for paragraphs." }),
       letterSpacing: lengthField("Letter spacing", { slider: { min: -2, max: 12 }, units: ["px", "em"] }),
+      textTransform: choiceField("Capital letters", TEXT_TRANSFORM_CHOICES, { unsetLabel: "As typed" }),
       decoration: choiceField("Decoration", DECORATION_CHOICES, { unsetLabel: "None" }),
       tag: choiceField("Meaning for search engines and screen readers", TEXT_TAG_CHOICES, { unsetLabel: "Automatic" }),
       fontFamily: fontField("Font"),
@@ -408,6 +415,7 @@ const rootFields: Fields = {
   closeOnEscape: toggleField("Close with the Escape key"),
   closeOnOverlayClick: toggleField("Close when the dimmed area is clicked"),
   showCloseButton: toggleField("Show a close (×) button"),
+  closeButtonColor: colorField("Close button color", "Use white on dark or photo backgrounds."),
   lockScroll: toggleField("Stop the page scrolling behind it"),
 };
 

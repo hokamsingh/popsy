@@ -203,6 +203,25 @@ function TextSection({ style, update }: SectionProps) {
       <FieldShell label="Text color" hint="Applies to text inside, unless a block sets its own.">
         <ColorControl label="Text color" value={plain(style.color)} onChange={(next) => update("color", next)} showOpacity={false} />
       </FieldShell>
+      <FieldShell label="Gradient text" hint="Fills the letters with a gradient instead of a flat colour.">
+        <div className={styles.gradients}>
+          <button type="button" className={`${styles.segment} ${plain(style.textGradient) === undefined ? styles.segmentActive : ""}`} onClick={() => update("textGradient", undefined)}>
+            None
+          </button>
+          {GRADIENTS.map((preset) => (
+            <button
+              key={preset.name}
+              type="button"
+              title={preset.name}
+              aria-label={`${preset.name} text`}
+              aria-pressed={plain(style.textGradient) === preset.value}
+              className={`${styles.gradient} ${plain(style.textGradient) === preset.value ? styles.gradientActive : ""}`}
+              style={{ background: preset.value }}
+              onClick={() => update("textGradient", preset.value)}
+            />
+          ))}
+        </div>
+      </FieldShell>
       <FieldShell label="Text alignment">
         <PerDevice value={style.textAlign} onChange={(next) => update("textAlign", next)}>
           {(device) => <ChoiceControl label="Text alignment" choices={TEXT_ALIGNMENTS} unsetLabel="Default" {...device} />}

@@ -45,6 +45,19 @@ describe("buildCss", () => {
   });
 });
 
+describe("gradient text", () => {
+  it("clips the gradient to the letters", () => {
+    const css = buildCss(".x", {}, { textGradient: "linear-gradient(90deg, red, blue)" });
+    expect(css).toContain("background-image:linear-gradient(90deg, red, blue)");
+    expect(css).toContain("background-clip:text");
+    expect(css).toContain("color:transparent");
+  });
+
+  it("ignores unsafe gradients", () => {
+    expect(buildCss(".x", {}, { textGradient: "red; } body{display:none" })).toBe("");
+  });
+});
+
 describe("responsive", () => {
   it("cascades mobile ← tablet ← desktop", () => {
     expect(resolveResponsive({ desktop: 1, mobile: 3 })).toEqual({ desktop: 1, tablet: 1, mobile: 3 });

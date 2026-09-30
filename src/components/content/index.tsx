@@ -29,6 +29,7 @@ export function Text({
   letterSpacing,
   align,
   decoration,
+  textTransform,
   ...p
 }: NodeBaseProps & {
   content?: string;
@@ -41,6 +42,7 @@ export function Text({
   letterSpacing?: Css;
   align?: Responsive<string>;
   decoration?: string;
+  textTransform?: string;
 }) {
   const v = VARIANTS[variant];
   return (
@@ -57,6 +59,7 @@ export function Text({
         "letter-spacing": letterSpacing,
         "text-align": align,
         "text-decoration": decoration,
+        "text-transform": textTransform,
         "white-space": "pre-wrap",
         "overflow-wrap": "anywhere",
       }}
