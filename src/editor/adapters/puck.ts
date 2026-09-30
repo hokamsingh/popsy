@@ -26,9 +26,11 @@ export function nodeToPuck(node: PopupNode): PuckItem {
 }
 
 export function toPuck(popup: Popup): PuckData {
+  const validated = parsePopup(popup);
+  const withDefaults = validated.success ? validated.data : popup;
   return {
-    root: { props: { ...popup.settings, name: popup.meta?.name ?? "" } },
-    content: popup.children.map(nodeToPuck),
+    root: { props: { ...withDefaults.settings, name: withDefaults.meta?.name ?? "" } },
+    content: withDefaults.children.map(nodeToPuck),
   };
 }
 

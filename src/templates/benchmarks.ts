@@ -160,6 +160,18 @@ export const glassmorphism = () =>
     ]),
   ]);
 
+export const countdown = () =>
+  build("Countdown", { width: "460px" }, () => [
+    node("section", {}, { padding: "32px" }, [
+      node("stack", { gap: "16px", align: "center" }, undefined, [
+        node("badge", { text: "Limited offer", icon: "clock", variant: "solid" }),
+        node("text", { content: "Sale ends soon", variant: "heading", align: "center" }),
+        node("countdown", { mode: "duration", durationMinutes: 90, showDays: false, endText: "This offer has ended", onEnd: { type: "event", name: "offer_ended" } }),
+        node("button", { label: "Shop the sale", size: "lg", action: { type: "event", name: "shop_sale" } }),
+      ]),
+    ]),
+  ]);
+
 export const heroDemo = () =>
   build("Home hero demo", { width: "400px", background: "transparent", shadow: "none", showCloseButton: false }, () => [
     node("section", {}, { padding: "8px" }, [
@@ -194,4 +206,5 @@ export const BENCHMARKS: Record<string, () => Popup> = {
   "desktop-only": desktopOnly,
   "video-popup": videoPopup,
   glassmorphism,
+  countdown,
 };

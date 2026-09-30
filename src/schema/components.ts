@@ -137,6 +137,29 @@ export const gridProps = z
   })
   .strict();
 
+export const COUNTDOWN_MODES = ["date", "duration"] as const;
+export const COUNTDOWN_LOOKS = ["tiles", "plain"] as const;
+export const COUNTDOWN_SIZES = ["sm", "md", "lg"] as const;
+
+export const countdownProps = z
+  .object({
+    mode: z.enum(COUNTDOWN_MODES).default("date"),
+    target: z.string().datetime({ offset: true }).optional(),
+    durationMinutes: z.number().min(1).max(10080).default(15),
+    showDays: z.boolean().default(true),
+    showSeconds: z.boolean().default(true),
+    showLabels: z.boolean().default(true),
+    look: z.enum(COUNTDOWN_LOOKS).default("tiles"),
+    size: z.enum(COUNTDOWN_SIZES).default("md"),
+    endText: z.string().max(200).optional(),
+    onEnd: actionSchema.optional(),
+  })
+  .strict()
+  .refine((props) => props.mode !== "date" || props.target !== undefined, {
+    path: ["target"],
+    message: "choose the date and time to count down to",
+  });
+
 export const spacerProps = z.object({ height: cssR.default("16px") }).strict();
 
 export const dividerProps = z
@@ -174,6 +197,7 @@ export const COMPONENTS: ComponentDef[] = [
   { type: "video", editorKey: "Video", label: "Video", category: "content", props: videoProps, container: false },
   { type: "icon", editorKey: "Icon", label: "Icon", category: "content", props: iconProps, container: false },
   { type: "button", editorKey: "Button", label: "Button", category: "content", props: buttonProps, container: false },
+  { type: "countdown", editorKey: "Countdown", label: "Countdown", category: "content", props: countdownProps, container: false },
   { type: "badge", editorKey: "Badge", label: "Badge", category: "content", props: badgeProps, container: false },
 ];
 

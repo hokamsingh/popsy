@@ -10,6 +10,8 @@ import {
   parseColor,
   parseLength,
   parseSides,
+  isoToLocalInput,
+  localInputToIso,
 } from "./values";
 
 describe("lengths", () => {
@@ -86,5 +88,19 @@ describe("blur", () => {
     expect(formatBlur(20, "blur(14px) saturate(1.4)")).toBe("blur(20px) saturate(1.4)");
     expect(formatBlur(8, undefined)).toBe("blur(8px)");
     expect(formatBlur(0, "blur(14px)")).toBeUndefined();
+  });
+});
+
+describe("date and time", () => {
+  it("round-trips through the local date-time input without drifting", () => {
+    const local = "2030-03-09T14:30";
+    const iso = localInputToIso(local)!;
+    expect(isoToLocalInput(iso)).toBe(local);
+  });
+
+  it("handles empty and invalid values", () => {
+    expect(isoToLocalInput(undefined)).toBe("");
+    expect(isoToLocalInput("nonsense")).toBe("");
+    expect(localInputToIso("")).toBeUndefined();
   });
 });

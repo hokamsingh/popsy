@@ -2,6 +2,7 @@
 import type { ComponentConfig, Config, Fields } from "@puckeditor/core";
 import type { ReactNode } from "react";
 import { Badge, Button, Icon, Image, RichText, Text, Video } from "@/components/content";
+import { Countdown } from "@/components/content/Countdown";
 import { Container, Divider, Flex, Grid, Section, Spacer, Stack } from "@/components/layout";
 import { PopupShell } from "@/components/popup/PopupShell";
 import { RuntimeContext } from "@/runtime/context";
@@ -9,7 +10,7 @@ import { COMPONENTS } from "@/schema/components";
 import { settingsSchema, type PopupSettings } from "@/schema/popup";
 import type { Choice } from "../controls/ChoiceControl";
 import {
-  actionField, blurField, choiceField, colorField, fontField, iconField, lengthField, numberField, popupHeightField, radiusField, styleField, textField, themeFontsField, toggleField,
+  actionField, blurField, choiceField, colorField, dateTimeField, fontField, iconField, lengthField, numberField, popupHeightField, radiusField, styleField, textField, themeFontsField, toggleField,
 } from "./fields";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -167,6 +168,53 @@ const component = (label: string, fields: Fields, render: ComponentConfig["rende
   render,
 });
 
+const COUNTDOWN_MODE_CHOICES: Choice<string>[] = [
+  { value: "date", label: "Until a date and time" },
+  { value: "duration", label: "Starts when the popup opens" },
+];
+
+const COUNTDOWN_LOOK_CHOICES: Choice<string>[] = [
+  { value: "tiles", label: "Boxes" },
+  { value: "plain", label: "Plain (12 : 30 : 05)" },
+];
+
+const DAYS_FROM_NOW_BY_DEFAULT = 3;
+
+const countdownFields: Fields = {
+  mode: choiceField("Count down", COUNTDOWN_MODE_CHOICES),
+  target: dateTimeField("Ends on", "Every visitor sees the same moment, wherever they are. Uses your computer's time zone."),
+  durationMinutes: numberField("Minutes to count down", { min: 1, max: 10080, hint: "Starts fresh each time the popup opens. 60 = one hour, 1440 = one day." }),
+  showDays: toggleField("Show days"),
+  showSeconds: toggleField("Show seconds"),
+  showLabels: toggleField("Show labels (Days, Hours…)"),
+  look: choiceField("Look", COUNTDOWN_LOOK_CHOICES),
+  size: choiceField("Size", BUTTON_SIZE_CHOICES),
+  endText: textField("Message when it ends", { placeholder: "This offer has ended", hint: "Shown instead of the numbers. Leave empty to show zeros." }),
+  onEnd: actionField("When it reaches zero"),
+};
+
+const countdown: ComponentConfig = {
+  label: "Countdown",
+  fields: { ...countdownFields, style: styleField() },
+  resolveFields: (data) => {
+    const { mode } = data.props as Props;
+    const { target, durationMinutes, ...common } = countdownFields;
+    return { mode: common.mode, ...(mode === "duration" ? { durationMinutes } : { target }), ...common, style: styleField() };
+  },
+  defaultProps: {
+    style: { color: "token:color.text" },
+    mode: "date",
+    target: new Date(Date.now() + DAYS_FROM_NOW_BY_DEFAULT * 86_400_000).toISOString(),
+    durationMinutes: 15,
+    showDays: true,
+    showSeconds: true,
+    showLabels: true,
+    look: "tiles",
+    size: "md",
+  },
+  render: adapt(Countdown),
+};
+
 const components: Record<string, ComponentConfig> = {
   Section: component("Section", { children: slot }, adapt(Section), { style: { padding: "32px" } }),
   Container: component("Container", { children: slot }, adapt(Container), { style: { maxWidth: "100%" } }),
@@ -313,6 +361,7 @@ const components: Record<string, ComponentConfig> = {
     adapt(Button),
     { label: "Continue", variant: "solid", size: "md", iconPosition: "left", fullWidth: false, disabled: false, action: { type: "dismiss" } },
   ),
+  Countdown: countdown,
   Badge: component(
     "Badge",
     {

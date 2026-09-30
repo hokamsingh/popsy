@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { fromPuck, nodeFromPuck, toPuck, type PuckData } from "./puck";
-import { parsePopup } from "@/schema/popup";
+import { parsePopup, type Popup } from "@/schema/popup";
 import { BENCHMARKS } from "@/templates/benchmarks";
 
 describe("puck adapter", () => {
@@ -50,5 +50,14 @@ describe("puck adapter", () => {
     if (!r.success) throw new Error();
     expect(r.data.meta?.name).toBe("Hello");
     expect(r.data.settings).toMatchObject({ width: "600px", position: "top" });
+  });
+
+  it("fills in schema defaults so the editor shows what the block actually uses", () => {
+    const popup: Popup = {
+      ...BENCHMARKS.announcement(),
+      children: [{ id: "c", type: "countdown", props: { mode: "duration", durationMinutes: 5 } }],
+    };
+    const item = toPuck(popup).content[0];
+    expect(item.props).toMatchObject({ showLabels: true, showSeconds: true, look: "tiles" });
   });
 });

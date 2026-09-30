@@ -99,3 +99,18 @@ export function formatBlur(amount: number, previous: string | undefined): string
   if (previous && BLUR_PATTERN.test(previous)) return previous.replace(BLUR_PATTERN, blur);
   return blur;
 }
+
+const twoDigits = (n: number) => String(n).padStart(2, "0");
+
+export function isoToLocalInput(iso: string | undefined): string {
+  const date = iso ? new Date(iso) : null;
+  if (!date || Number.isNaN(date.getTime())) return "";
+  const day = `${date.getFullYear()}-${twoDigits(date.getMonth() + 1)}-${twoDigits(date.getDate())}`;
+  return `${day}T${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
+}
+
+export function localInputToIso(local: string): string | undefined {
+  const date = new Date(local);
+  return local && !Number.isNaN(date.getTime()) ? date.toISOString() : undefined;
+}
+

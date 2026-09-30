@@ -16,7 +16,7 @@ import { RadiusControl } from "../controls/RadiusControl";
 import { SizeControl } from "../controls/SizeControl";
 import { StyleEditor } from "../controls/StyleEditor";
 import { ToggleControl } from "../controls/ToggleControl";
-import { formatBlur, parseBlur, type LengthUnit } from "../controls/values";
+import { formatBlur, isoToLocalInput, localInputToIso, parseBlur, type LengthUnit } from "../controls/values";
 import styles from "../controls/controls.module.css";
 
 type Change<T> = (value: T | undefined) => void;
@@ -143,6 +143,19 @@ export const popupHeightField = (label: string, slider: SliderRange) =>
   field<string>(label, (value, onChange) => (
     <FieldShell label={label}>
       <SizeControl label={label} value={value} onChange={onChange} slider={slider} autoLabel="Fit the content" fixedLabel="Set a height" startingSize="400px" />
+    </FieldShell>
+  ));
+
+export const dateTimeField = (label: string, hint?: string) =>
+  field<string>(label, (value, onChange) => (
+    <FieldShell label={label} hint={hint}>
+      <input
+        type="datetime-local"
+        className={styles.text}
+        aria-label={label}
+        value={isoToLocalInput(value)}
+        onChange={(event) => onChange(localInputToIso(event.target.value))}
+      />
     </FieldShell>
   ));
 

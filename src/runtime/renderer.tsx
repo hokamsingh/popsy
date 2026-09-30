@@ -1,6 +1,7 @@
 "use client";
 import { memo, useEffect, useId, useMemo, type ReactNode } from "react";
 import { Badge, Button, Icon, Image, RichText, Text, Video } from "@/components/content";
+import { Countdown } from "@/components/content/Countdown";
 import { Container, Divider, Flex, Grid, Section, Spacer, Stack } from "@/components/layout";
 import { PopupShell, type ShellMode } from "@/components/popup/PopupShell";
 import { parsePopup, type PopupNode } from "@/schema/popup";
@@ -23,6 +24,7 @@ const COMPONENT_BY_TYPE: Record<string, (props: any) => ReactNode> = {
   icon: Icon,
   button: Button,
   badge: Badge,
+  countdown: Countdown,
 };
 
 function renderNode(node: PopupNode): ReactNode {
