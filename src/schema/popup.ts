@@ -23,6 +23,7 @@ export const settingsSchema = z
     position: z.enum(POSITIONS).default("center"),
     overlay: z.boolean().default(true),
     overlayColor: css.default("rgba(15,23,42,0.55)"),
+    overlayBlur: css.optional(),
     background: css.default("token:color.background"),
     radius: css.default("token:radius.lg"),
     shadow: css.default("token:shadow.lg"),

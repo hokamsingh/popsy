@@ -135,6 +135,31 @@ export const videoPopup = () =>
     node("video", { src: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm", controls: true, aspectRatio: "16 / 9" }),
   ]);
 
+export const glassmorphism = () =>
+  build("Glassmorphism", { width: "420px", background: "transparent", shadow: "none", overlayBlur: "blur(6px)", showCloseButton: false }, () => [
+    node("section", {}, { padding: "32px", gradient: "linear-gradient(135deg, #6366f1, #ec4899 60%, #f59e0b)", radius: "token:radius.lg" }, [
+      node("stack", { gap: "12px", align: "center" }, {
+        padding: "28px",
+        background: "rgba(255,255,255,0.18)",
+        backdropFilter: "blur(14px) saturate(1.4)",
+        border: "1px solid rgba(255,255,255,0.35)",
+        radius: "token:radius.lg",
+        shadow: "0 8px 32px rgba(0,0,0,0.2)",
+        color: "#ffffff",
+      }, [
+        node("badge", { text: "Members only", icon: "sparkles", variant: "outline" }, { color: "#ffffff", border: "1px solid rgba(255,255,255,0.6)" }),
+        node("text", { content: "Frosted glass", variant: "heading", align: "center" }),
+        node("text", { content: "Translucent surfaces blur whatever sits behind them.", align: "center" }),
+        node("button", { label: "Continue", action: dismiss }, {
+          background: "rgba(255,255,255,0.22)",
+          backdropFilter: "blur(8px)",
+          border: "1px solid rgba(255,255,255,0.5)",
+          color: "#ffffff",
+        }),
+      ]),
+    ]),
+  ]);
+
 export const BENCHMARKS: Record<string, () => Popup> = {
   announcement,
   "full-bleed-image": fullBleedImage,
@@ -145,4 +170,5 @@ export const BENCHMARKS: Record<string, () => Popup> = {
   "mobile-only": mobileOnly,
   "desktop-only": desktopOnly,
   "video-popup": videoPopup,
+  glassmorphism,
 };

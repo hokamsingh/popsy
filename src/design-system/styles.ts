@@ -53,6 +53,7 @@ export const styleSchema = z
     border: css,
     radius: css,
     shadow: css,
+    backdropFilter: css,
     opacity: responsive(z.number().min(0).max(1)),
     overflow: responsive(z.enum(OVERFLOWS)),
     position: responsive(z.enum(POSITION_MODES)),
@@ -82,6 +83,7 @@ const SIMPLE_MAP: { [K in keyof Style]?: string } = {
   border: "border",
   radius: "border-radius",
   shadow: "box-shadow",
+  backdropFilter: "backdrop-filter",
   opacity: "opacity",
   overflow: "overflow",
   position: "position",
@@ -111,6 +113,7 @@ export function buildCss(selector: string, cssProps: CssProps = {}, style: Style
   };
 
   for (const [prop, value] of Object.entries(cssProps)) push(prop, value);
+  push("-webkit-backdrop-filter", style.backdropFilter);
   for (const [key, prop] of Object.entries(SIMPLE_MAP) as [keyof Style, string][]) {
     push(prop, style[key] as Responsive<string | number | undefined> | undefined);
   }

@@ -33,6 +33,12 @@ describe("buildCss", () => {
     expect(css).toBe("@media (max-width: 640px){.x{display:none!important}}");
   });
 
+  it("emits backdrop-filter with the Safari prefix", () => {
+    const css = buildCss(".x", {}, { backdropFilter: "blur(12px)" });
+    expect(css).toContain("-webkit-backdrop-filter:blur(12px)");
+    expect(css).toContain("backdrop-filter:blur(12px)");
+  });
+
   it("only uses backgroundImage URLs that pass validation", () => {
     expect(buildCss(".x", {}, { backgroundImage: "https://a.com/i.png" })).toContain('url("https://a.com/i.png")');
     expect(buildCss(".x", {}, { backgroundImage: "javascript:alert(1)" })).toBe("");

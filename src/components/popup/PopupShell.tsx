@@ -162,6 +162,8 @@ export function PopupShell({ settings: s, mode = "overlay", open = true, onDismi
         padding: 16,
         boxSizing: "border-box",
         background: s.overlay ? resolveTokens(s.overlayColor) : "transparent",
+        backdropFilter: s.overlay ? s.overlayBlur : undefined,
+        WebkitBackdropFilter: s.overlay ? s.overlayBlur : undefined,
         pointerEvents: s.overlay ? "auto" : "none",
       }}
     >

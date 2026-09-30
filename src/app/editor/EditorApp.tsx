@@ -1,6 +1,7 @@
 "use client";
 import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/no-external.css";
+import { Download, Eye, Home, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { fromPuck, toPuck, type PuckData } from "@/editor/adapters/puck";
@@ -10,6 +11,12 @@ import { parsePopup } from "@/schema/popup";
 import { BENCHMARKS } from "@/templates/benchmarks";
 
 const SAVE_DELAY_MS = 500;
+const TOAST_MS = 3500;
+
+interface Toast {
+  kind: "success" | "error";
+  text: string;
+}
 
 const VIEWPORTS = [
   { width: 1100, height: "auto" as const, label: "Desktop" },
@@ -51,26 +58,29 @@ function HeaderTools({ data, onLoad, errors, savedAt, children }: HeaderToolsPro
 
   return (
     <>
-      <span className={`status${errors.length ? " error" : ""}`} title={errors.join("\n")}>
-        {errors.length ? `${errors.length} validation issue(s), not saved` : savedAt && `Saved ${savedAt}`}
+      <Link href="/" className="tool tool-link" title="Back to home">
+        <Home size={15} aria-hidden /> Home
+      </Link>
+      <span className={`tool-status${errors.length ? " is-error" : ""}`} title={errors.join("\n")}>
+        {errors.length ? `${errors.length} issue(s), not saved` : savedAt ? `Saved ${savedAt}` : "Not saved yet"}
       </span>
-      <select aria-label="Load benchmark" value="" onChange={(e) => e.target.value && onLoad(toPuck(BENCHMARKS[e.target.value]()))}>
-        <option value="">Load benchmark…</option>
+      <select className="tool" aria-label="Load benchmark" value="" onChange={(e) => e.target.value && onLoad(toPuck(BENCHMARKS[e.target.value]()))}>
+        <option value="">Load example…</option>
         {Object.keys(BENCHMARKS).map((id) => (
           <option key={id} value={id}>
             {id}
           </option>
         ))}
       </select>
-      <button type="button" onClick={exportJson}>
-        Export JSON
+      <button type="button" className="tool" onClick={exportJson}>
+        <Download size={15} aria-hidden /> Export
       </button>
-      <button type="button" onClick={() => fileInput.current?.click()}>
-        Import JSON
+      <button type="button" className="tool" onClick={() => fileInput.current?.click()}>
+        <Upload size={15} aria-hidden /> Import
       </button>
       <input ref={fileInput} type="file" accept="application/json" hidden onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
-      <Link href="/preview" target="_blank">
-        Preview ↗
+      <Link href="/preview" target="_blank" className="tool tool-link">
+        <Eye size={15} aria-hidden /> Preview
       </Link>
       {children}
     </>
@@ -81,6 +91,7 @@ export default function EditorApp() {
   const [data, setData] = useState<PuckData>(() => toPuck(loadPopup()));
   const [savedAt, setSavedAt] = useState("");
   const [loadCount, setLoadCount] = useState(0);
+  const [toast, setToast] = useState<Toast | null>(null);
 
   function loadDocument(next: PuckData) {
     setData(next);
@@ -102,6 +113,24 @@ export default function EditorApp() {
     return () => clearTimeout(timer);
   }, [validation]);
 
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), TOAST_MS);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  function publish(published: PuckData) {
+    const result = fromPuck(published);
+    if (!result.success) {
+      const first = result.errors[0];
+      setToast({ kind: "error", text: `Couldn't publish: ${first.path} ${first.message}` });
+      return;
+    }
+    savePopup(result.data);
+    setSavedAt(new Date().toLocaleTimeString());
+    setToast({ kind: "success", text: "Published. Your popup is saved and ready in Preview." });
+  }
+
   const overrides = useMemo(
     () => ({
       headerActions: ({ children }: { children: ReactNode }) => (
@@ -114,13 +143,21 @@ export default function EditorApp() {
   );
 
   return (
-    <Puck
-      key={loadCount}
-      config={puckConfig}
-      data={data}
-      viewports={VIEWPORTS}
-      onChange={setData}
-      overrides={overrides}
-    />
+    <>
+      <Puck
+        key={loadCount}
+        config={puckConfig}
+        data={data}
+        viewports={VIEWPORTS}
+        onChange={setData}
+        onPublish={publish}
+        overrides={overrides}
+      />
+      {toast && (
+        <div role="status" className={`toast toast-${toast.kind}`}>
+          {toast.text}
+        </div>
+      )}
+    </>
   );
 }
