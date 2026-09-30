@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ANCHORS, layerCssProps, layerPlacement } from "./layers";
+import { ANCHORS, layerCssProps, layerPlacement, offsetsFromCenterPoint, topLeftPoint } from "./layers";
 import { buildCss } from "./styles";
 
 describe("layerPlacement", () => {
@@ -47,3 +47,30 @@ describe("layerCssProps", () => {
     expect(css).toContain("@media (max-width: 640px){.x{grid-area:1 / 1;min-width:0;justify-self:center;align-self:end}}");
   });
 });
+
+describe("free-form positions", () => {
+  const layer = { width: 400, height: 300 };
+  const block = { width: 80, height: 28 };
+
+  it("finds the top-left corner for every kind of anchor", () => {
+    expect(topLeftPoint("top-left", 12, 8, layer, block)).toEqual({ x: 12, y: 8 });
+    expect(topLeftPoint("bottom-right", 10, 10, layer, block)).toEqual({ x: 310, y: 262 });
+    expect(topLeftPoint("center", 0, 0, layer, block)).toEqual({ x: 160, y: 136 });
+    expect(topLeftPoint("fill", 5, 6, layer, block)).toEqual({ x: 5, y: 6 });
+  });
+
+  it("turns a dragged spot into offsets centred on the pointer", () => {
+    expect(offsetsFromCenterPoint({ x: 200, y: 150 }, layer, block)).toEqual({ x: 160, y: 136 });
+  });
+
+  it("keeps the block inside the layer", () => {
+    expect(offsetsFromCenterPoint({ x: -50, y: -50 }, layer, block)).toEqual({ x: 0, y: 0 });
+    expect(offsetsFromCenterPoint({ x: 999, y: 999 }, layer, block)).toEqual({ x: 320, y: 272 });
+  });
+
+  it("round-trips: dragging to a spot and reading it back gives the same spot", () => {
+    const { x, y } = offsetsFromCenterPoint({ x: 123, y: 77 }, layer, block);
+    expect(topLeftPoint("top-left", x, y, layer, block)).toEqual({ x, y });
+  });
+});
+

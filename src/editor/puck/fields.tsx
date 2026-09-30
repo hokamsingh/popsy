@@ -1,6 +1,7 @@
 "use client";
 import { usePuck, type CustomField } from "@puckeditor/core";
 import type { ReactElement } from "react";
+import type { Size } from "@/design-system/layers";
 import type { Responsive } from "@/design-system/responsive";
 import type { Style } from "@/design-system/styles";
 import type { Action, ActionType } from "@/schema/actions";
@@ -16,7 +17,7 @@ import { RadiusControl } from "../controls/RadiusControl";
 import { SizeControl } from "../controls/SizeControl";
 import { StyleEditor } from "../controls/StyleEditor";
 import { ToggleControl } from "../controls/ToggleControl";
-import { formatBlur, isoToLocalInput, localInputToIso, parseBlur, type LengthUnit } from "../controls/values";
+import { formatBlur, isoToLocalInput, localInputToIso, parseBlur, parseLength, type LengthUnit } from "../controls/values";
 import styles from "../controls/controls.module.css";
 
 type Change<T> = (value: T | undefined) => void;
@@ -219,13 +220,24 @@ export const iconField = (label = "Icon", { required = false }: { required?: boo
   ));
 };
 
-function useIsSelectedOnLayer() {
-  const { selectedItem, getParentById } = usePuck();
-  return !!selectedItem && getParentById(selectedItem.props.id)?.type === "Layers";
+const lengthInPixels = (value: unknown, fallback: number) => {
+  const text = typeof value === "string" ? value : (value as { desktop?: string } | undefined)?.desktop;
+  const length = parseLength(text);
+  return length?.unit === "px" ? length.amount : fallback;
+};
+
+function useSelectedLayerSize(): Size | null {
+  const { appState, selectedItem, getParentById } = usePuck();
+  const parent = selectedItem ? getParentById(selectedItem.props.id) : undefined;
+  if (parent?.type !== "Layers") return null;
+  return {
+    width: lengthInPixels(appState.data.root.props?.width, 420),
+    height: lengthInPixels(parent.props.height, 320),
+  };
 }
 
 function StyleFieldEditor({ value, onChange }: { value: Style | undefined; onChange: Change<Style> }) {
-  return <StyleEditor value={value} onChange={onChange} isOnLayer={useIsSelectedOnLayer()} />;
+  return <StyleEditor value={value} onChange={onChange} layer={useSelectedLayerSize()} />;
 }
 
 export const styleField = () => field<Style>("Style", (value, onChange) => <StyleFieldEditor value={value} onChange={onChange} />);

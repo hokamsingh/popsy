@@ -417,3 +417,26 @@
   border-color: #4f46e5;
   background: #4f46e5;
 }
+
+.pad {
+  position: relative;
+  border: 1px dashed #818cf8;
+  border-radius: 8px;
+  background: repeating-linear-gradient(45deg, #f5f7ff, #f5f7ff 8px, #eef2ff 8px, #eef2ff 16px);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.padBlock {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid #4f46e5;
+  border-radius: 4px;
+  background: rgba(79, 70, 229, 0.35);
+  cursor: grab;
+}
+
+.padBlock:focus-visible {
+  outline: 2px solid #1e1b4b;
+  outline-offset: 2px;
+}

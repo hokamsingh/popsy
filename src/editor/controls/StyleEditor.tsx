@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { expandResponsive, resolveResponsive, type Responsive } from "@/design-system/responsive";
 import type { Style } from "@/design-system/styles";
+import { topLeftPoint, type Anchor, type Size } from "@/design-system/layers";
 import { AnchorControl } from "./AnchorControl";
 import { ChoiceControl, type Choice } from "./ChoiceControl";
 import { ColorControl } from "./ColorControl";
@@ -10,11 +11,12 @@ import { FieldShell } from "./FieldShell";
 import { LengthControl, type SliderRange } from "./LengthControl";
 import { NumberStepper } from "./NumberStepper";
 import { PerDevice } from "./PerDevice";
+import { PositionPad } from "./PositionPad";
 import { RadiusControl } from "./RadiusControl";
 import { SpacingControl } from "./SpacingControl";
 import { SizeControl } from "./SizeControl";
 import { ToggleControl } from "./ToggleControl";
-import { formatBlur, formatBorder, parseBlur, parseBorder, BORDER_STYLES, type Border, type BorderStyle } from "./values";
+import { formatBlur, formatBorder, parseBlur, parseLength, parseBorder, BORDER_STYLES, type Border, type BorderStyle } from "./values";
 import styles from "./controls.module.css";
 
 type Update = <K extends keyof Style>(key: K, value: Style[K] | undefined) => void;
@@ -139,13 +141,31 @@ function SidesRow({ field, label, hint, style, update }: SectionProps & { field:
   );
 }
 
-function LayerSection({ style, update }: SectionProps) {
+const pixels = (value: string | undefined) => {
+  const length = parseLength(value);
+  return length?.unit === "px" ? length.amount : undefined;
+};
+
+function LayerSection({ style, update, patch, layer }: SectionProps & { layer: Size }) {
+  const anchor: Anchor = plain(style.anchor) ?? "center";
+  const offsetX = pixels(style.offsetX as string | undefined) ?? 0;
+  const offsetY = pixels(style.offsetY as string | undefined) ?? 0;
+  const position = topLeftPoint(anchor, offsetX, offsetY, layer);
+
   return (
     <Section title="Position on the layer" defaultOpen>
       <FieldShell label="Where it sits" hint="This block floats on top of the others. Blocks lower in the Outline appear in front.">
         <PerDevice value={style.anchor} onChange={(next) => update("anchor", next)}>
           {(device) => <AnchorControl label="Where it sits" {...device} />}
         </PerDevice>
+      </FieldShell>
+      <FieldShell label="Or drag it anywhere" hint="Drag inside the box, or focus the blue box and use the arrow keys (Shift for bigger steps).">
+        <PositionPad
+          label="Position on the layer"
+          layer={layer}
+          position={position}
+          onMove={({ x, y }) => patch({ anchor: "top-left", offsetX: `${x}px`, offsetY: `${y}px` })}
+        />
       </FieldShell>
       <FieldShell label="Distance across" hint="Pushes it away from the left or right edge. For the middle spots it nudges sideways.">
         <LengthControl label="Distance across" value={style.offsetX as string | undefined} onChange={(next) => update("offsetX", next)} slider={{ min: -100, max: 100 }} units={["px"]} />
@@ -357,10 +377,10 @@ function AdvancedSection({ style, update }: SectionProps) {
 interface StyleEditorProps {
   value: Style | undefined;
   onChange: (value: Style) => void;
-  isOnLayer?: boolean;
+  layer?: Size | null;
 }
 
-export function StyleEditor({ value, onChange, isOnLayer = false }: StyleEditorProps) {
+export function StyleEditor({ value, onChange, layer = null }: StyleEditorProps) {
   const style = value ?? {};
   const patch = (changes: Style) => {
     const merged: Style = { ...style, ...changes };
@@ -371,7 +391,7 @@ export function StyleEditor({ value, onChange, isOnLayer = false }: StyleEditorP
 
   return (
     <div>
-      {isOnLayer && <LayerSection {...props} />}
+      {layer && <LayerSection {...props} layer={layer} />}
       <SpacingSection {...props} />
       <SizeSection {...props} />
       <TextSection {...props} />
