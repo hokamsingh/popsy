@@ -29,7 +29,7 @@ export function toPuck(popup: Popup): PuckData {
   const validated = parsePopup(popup);
   const withDefaults = validated.success ? validated.data : popup;
   return {
-    root: { props: { ...withDefaults.settings, name: withDefaults.meta?.name ?? "" } },
+    root: { props: { ...withDefaults.settings, name: withDefaults.meta?.name ?? "", variables: withDefaults.variables ?? [] } },
     content: withDefaults.children.map(nodeToPuck),
   };
 }
@@ -69,6 +69,14 @@ export function nodeFromPuck(item: PuckItem): PopupNode {
   return node;
 }
 
+/** Rows still waiting for a name are left out rather than reported as errors. */
+function variablesFromPuck(value: unknown): { name: unknown; defaultValue: unknown }[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((row): row is Record<string, unknown> => !!row && typeof row === "object" && typeof row.name === "string" && row.name.trim() !== "")
+    .map((row) => ({ name: (row.name as string).trim(), defaultValue: row.defaultValue ?? "" }));
+}
+
 export function fromPuck(data: PuckData): ParseResult {
   const rootProps = data.root?.props ?? {};
   const settings: Record<string, unknown> = {};
@@ -82,6 +90,7 @@ export function fromPuck(data: PuckData): ParseResult {
     type: "popup",
     ...(name ? { meta: { name } } : {}),
     settings,
+    variables: variablesFromPuck(rootProps.variables),
     children: (data.content ?? []).map((item) => nodeFromPuck(item as PuckItem)),
   });
 }

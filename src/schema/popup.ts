@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { isTokenName } from "@/design-system/tokens";
-import { NODE_ID } from "./validation";
+import { NODE_ID, VARIABLE_NAME } from "./validation";
 import { COMPONENT_MAP } from "./components";
 import { cssValue as css, styleSchema, type Style } from "@/design-system/styles";
 import { CURRENT_VERSION, migratePopup } from "./migrations";
@@ -42,6 +42,18 @@ export const settingsSchema = z
 
 export type PopupSettings = z.infer<typeof settingsSchema>;
 
+export const MAX_VARIABLES = 50;
+
+/** A value the host page can fill in wherever the popup says `{{name}}`. */
+export const variableSchema = z
+  .object({
+    name: z.string().regex(VARIABLE_NAME, "use letters, numbers and _ only, starting with a letter (dots reach into nested values)"),
+    defaultValue: z.string().max(1000).default(""),
+  })
+  .strict();
+
+export type PopupVariable = z.infer<typeof variableSchema>;
+
 export interface PopupNode {
   id: string;
   type: string;
@@ -71,6 +83,7 @@ export const popupSchema = z
       .passthrough()
       .optional(),
     settings: settingsSchema.default(() => settingsSchema.parse({})),
+    variables: z.array(variableSchema).max(MAX_VARIABLES).default([]),
     children: z.array(nodeShape).default([]),
   })
   .strict();
@@ -80,6 +93,7 @@ export interface Popup {
   type: "popup";
   meta?: { name?: string; description?: string; [k: string]: unknown };
   settings: PopupSettings;
+  variables: PopupVariable[];
   children: PopupNode[];
 }
 
@@ -108,6 +122,12 @@ export function parsePopup(input: unknown): ParseResult {
   const popup = base.data as Popup;
   const errors: ValidationIssue[] = [];
   const seen = new Set<string>();
+
+  const names = new Set<string>();
+  popup.variables.forEach((variable, i) => {
+    if (names.has(variable.name)) errors.push({ path: `variables[${i}].name`, message: `duplicate variable "${variable.name}"` });
+    names.add(variable.name);
+  });
 
   const visit = (nodes: PopupNode[], path: string): PopupNode[] =>
     nodes.map((node, i) => {
@@ -147,6 +167,7 @@ export function createEmptyPopup(name = "Untitled popup"): Popup {
     type: "popup",
     meta: { name },
     settings: settingsSchema.parse({}),
+    variables: [],
     children: [],
   };
 }

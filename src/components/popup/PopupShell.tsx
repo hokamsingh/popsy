@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, type CSSProperties, type KeyboardEvent, type 
 import { X } from "lucide-react";
 import { tokensToCssVars, resolveTokens } from "@/design-system/tokens";
 import type { PopupSettings } from "@/schema/popup";
+import { useRuntime } from "@/runtime/context";
 
 type Position = PopupSettings["position"];
 
@@ -49,6 +50,7 @@ const FOCUSABLE =
 export function PopupShell({ settings: s, mode = "overlay", open = true, onDismiss, children }: PopupShellProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const { vars } = useRuntime();
   const overlayMode = mode === "overlay";
 
   useEffect(() => {
@@ -127,7 +129,7 @@ export function PopupShell({ settings: s, mode = "overlay", open = true, onDismi
       style={dialogStyle}
     >
       <span id={titleId} hidden>
-        {s.title}
+        {vars.text(s.title)}
       </span>
       {s.showCloseButton ? (
         <button type="button" className="pp-shell-close" aria-label="Close" onClick={() => onDismiss?.()}>

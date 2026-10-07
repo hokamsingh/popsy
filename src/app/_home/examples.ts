@@ -6,6 +6,7 @@ export interface ExampleInfo {
 
 export const EXAMPLES: ExampleInfo[] = [
   { id: "announcement", title: "Announcement", blurb: "A short message with one clear action." },
+  { id: "personalized", title: "Personalized offer", blurb: "Fills in {{firstName}} and other values from your site." },
   { id: "two-column-promotion", title: "Two-column promotion", blurb: "Image and offer side by side, stacked on mobile." },
   { id: "pricing-table", title: "Pricing table", blurb: "Three plans in a grid that reflows by device." },
   { id: "glassmorphism", title: "Frosted glass", blurb: "Translucent surfaces with a blurred backdrop." },

@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import { isSafeLinkUrl } from "@/schema/validation";
+import { protectTokens, type Templater } from "./variables";
 
 export type Inline =
   | { kind: "text"; text: string }
@@ -72,37 +73,45 @@ export function parseRichText(src: string): Block[] {
   return blocks;
 }
 
-function renderInline(nodes: Inline[]): ReactNode {
+const PLAIN: Templater = { text: (s) => s, url: (s) => s };
+
+/** Fills variables after parsing, so a value can only ever be plain text and never adds formatting or links. */
+function renderInline(nodes: Inline[], fill: Templater): ReactNode {
   return nodes.map((n, i) => {
     switch (n.kind) {
       case "text":
-        return <Fragment key={i}>{n.text}</Fragment>;
+        return <Fragment key={i}>{fill.text(n.text)}</Fragment>;
       case "br":
         return <br key={i} />;
       case "bold":
-        return <strong key={i}>{renderInline(n.children)}</strong>;
+        return <strong key={i}>{renderInline(n.children, fill)}</strong>;
       case "italic":
-        return <em key={i}>{renderInline(n.children)}</em>;
+        return <em key={i}>{renderInline(n.children, fill)}</em>;
       case "underline":
-        return <u key={i}>{renderInline(n.children)}</u>;
-      case "link":
+        return <u key={i}>{renderInline(n.children, fill)}</u>;
+      case "link": {
+        const href = fill.url(n.href);
+        if (!isSafeLinkUrl(href)) return <Fragment key={i}>{renderInline(n.children, fill)}</Fragment>;
         return (
-          <a key={i} href={n.href} target="_blank" rel="noopener noreferrer">
-            {renderInline(n.children)}
+          <a key={i} href={href} target="_blank" rel="noopener noreferrer">
+            {renderInline(n.children, fill)}
           </a>
         );
+      }
     }
   });
 }
 
-export function renderRichText(src: string): ReactNode {
-  return parseRichText(src).map((b, i) =>
+export function renderRichText(src: string, vars: Templater = PLAIN): ReactNode {
+  const { masked, restore } = protectTokens(src);
+  const fill: Templater = { text: (s) => vars.text(restore(s)), url: (s) => vars.url(restore(s)) };
+  return parseRichText(masked).map((b, i) =>
     b.kind === "paragraph" ? (
-      <p key={i}>{renderInline(b.children)}</p>
+      <p key={i}>{renderInline(b.children, fill)}</p>
     ) : (
       <ul key={i}>
         {b.items.map((item, j) => (
-          <li key={j}>{renderInline(item)}</li>
+          <li key={j}>{renderInline(item, fill)}</li>
         ))}
       </ul>
     ),

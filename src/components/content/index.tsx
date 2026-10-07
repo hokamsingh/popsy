@@ -4,6 +4,7 @@ import { Frame, type NodeBaseProps } from "../frame";
 import { ICONS } from "./icons";
 import { renderRichText } from "@/runtime/richtext";
 import { useRuntime } from "@/runtime/context";
+import { isSafeAssetUrl, isSafeMediaUrl } from "@/schema/validation";
 import type { Action } from "@/schema/actions";
 import type { IconName } from "@/schema/components";
 import { mapResponsive, type Responsive } from "@/design-system/responsive";
@@ -45,6 +46,7 @@ export function Text({
   textTransform?: string;
 }) {
   const v = VARIANTS[variant];
+  const { vars } = useRuntime();
   return (
     <Frame
       {...p}
@@ -64,7 +66,7 @@ export function Text({
         "overflow-wrap": "anywhere",
       }}
     >
-      {content}
+      {vars.text(content)}
     </Frame>
   );
 }
@@ -73,7 +75,8 @@ const richTextRules = (sel: string) =>
   `${sel} p{margin:0 0 .75em}${sel} p:last-child{margin-bottom:0}${sel} ul{margin:0 0 .75em;padding-left:1.25em}${sel} a{color:var(--pp-color-primary);text-decoration:underline}`;
 
 export function RichText({ content = "", ...p }: NodeBaseProps & { content?: string }) {
-  const body = useMemo(() => renderRichText(content), [content]);
+  const { vars } = useRuntime();
+  const body = useMemo(() => renderRichText(content, vars), [content, vars]);
   return (
     <Frame
       {...p}
@@ -108,14 +111,16 @@ export function Image({
   action?: Action;
 }) {
   const onClick = useActionHandler(action);
+  const { vars } = useRuntime();
+  const url = vars.url(src);
   return (
     <Frame
       {...p}
       as="img"
       kind="image"
       attrs={{
-        src,
-        alt,
+        src: isSafeAssetUrl(url) ? url : undefined,
+        alt: vars.text(alt),
         loading,
         draggable: false,
         role: alt === "" ? "presentation" : undefined,
@@ -152,15 +157,17 @@ export function Video({
   aspectRatio?: string;
   objectFit?: string;
 }) {
-  const { editing } = useRuntime();
+  const { editing, vars } = useRuntime();
+  const url = vars.url(src);
+  const cover = poster === undefined ? undefined : vars.url(poster);
   return (
     <Frame
       {...p}
       as="video"
       kind="video"
       attrs={{
-        src,
-        poster,
+        src: isSafeMediaUrl(url) ? url : undefined,
+        poster: cover !== undefined && isSafeAssetUrl(cover) ? cover : undefined,
         controls,
         autoPlay: autoplay && !editing,
         muted: muted || (autoplay && !editing),
@@ -182,12 +189,14 @@ export function Icon({
   ...p
 }: NodeBaseProps & { name: IconName; size?: Css; color?: string; rotation?: number; label?: string }) {
   const Glyph = ICONS[name];
+  const { vars } = useRuntime();
+  const description = label ? vars.text(label) || undefined : undefined;
   return (
     <Frame
       {...p}
       as="span"
       kind="icon"
-      attrs={{ role: label ? "img" : undefined, "aria-label": label, "aria-hidden": label ? undefined : true }}
+      attrs={{ role: description ? "img" : undefined, "aria-label": description, "aria-hidden": description ? undefined : true }}
       cssProps={{
         display: "inline-flex",
         width: size,
@@ -242,6 +251,7 @@ export function Button({
   action?: Action;
 }) {
   const onClick = useActionHandler(action);
+  const { vars } = useRuntime();
   const s = BUTTON_SIZES[size];
   const Glyph = icon ? ICONS[icon] : null;
   const look = BUTTON_LOOKS[variant];
@@ -270,7 +280,7 @@ export function Button({
       }}
     >
       {Glyph && iconPosition === "left" ? <Glyph width="1.1em" height="1.1em" aria-hidden /> : null}
-      <span>{label}</span>
+      <span>{vars.text(label)}</span>
       {Glyph && iconPosition === "right" ? <Glyph width="1.1em" height="1.1em" aria-hidden /> : null}
     </Frame>
   );
@@ -285,6 +295,7 @@ export function Badge({
 }: NodeBaseProps & { text?: string; icon?: IconName; variant?: "solid" | "soft" | "outline"; size?: "sm" | "md" }) {
   const Glyph = icon ? ICONS[icon] : null;
   const look = BADGE_LOOKS[variant];
+  const { vars } = useRuntime();
   return (
     <Frame
       {...p}
@@ -303,7 +314,7 @@ export function Badge({
       }}
     >
       {Glyph ? <Glyph width="1em" height="1em" aria-hidden /> : null}
-      {text}
+      {vars.text(text)}
     </Frame>
   );
 }
