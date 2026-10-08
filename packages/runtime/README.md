@@ -1,7 +1,8 @@
 # @popsy-render/runtime
 
 Renders Popsy popups (the JSON the Popsy editor exports) in any React 18 or 19 app, including the
-Next.js App Router. The editor is not included. The bundle is about 57 KB minified, plus `zod`.
+Next.js App Router. The editor is not included. About 31 KB gzipped in total, with no dependencies
+besides React: validation (slim `zod/mini`) and icons are bundled in.
 
 ```bash
 npm i @popsy-render/runtime   # peer deps: react, react-dom (18.2+ or 19)

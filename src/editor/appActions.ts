@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod/mini";
 
 /**
  * Actions the host app says it handles, so designers pick from a list instead of typing names.
@@ -13,9 +13,9 @@ export interface AppAction {
 
 const manifestSchema = z.array(
   z.object({
-    name: z.string().regex(/^[A-Za-z][A-Za-z0-9_.:-]{0,63}$/),
-    label: z.string().max(100).optional(),
-    fields: z.array(z.string().max(64)).max(20).default([]),
+    name: z.string().check(z.regex(/^[A-Za-z][A-Za-z0-9_.:-]{0,63}$/)),
+    label: z.optional(z.string().check(z.maxLength(100))),
+    fields: z._default(z.array(z.string().check(z.maxLength(64))).check(z.maxLength(20)), () => []),
   }),
 );
 
