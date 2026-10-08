@@ -228,6 +228,24 @@ export const heroDemo = () =>
     ]),
   ]);
 
+export const personalized = (): Popup => ({
+  ...build("Personalized offer", { title: "An offer for {{firstName}}" }, () => [
+    node("section", {}, { padding: "32px" }, [
+      node("stack", { gap: "16px", align: "center" }, undefined, [
+        node("badge", { text: "Just for you", icon: "gift" }),
+        node("text", { content: "Welcome back, {{firstName}}!", variant: "heading", align: "center" }),
+        node("text", { content: "Take {{discount}}% off anything in {{category}} today.", align: "center" }, { color: "token:color.muted" }),
+        node("button", { label: "Shop {{category}}", size: "lg", action: { type: "event", name: "shop_category", payload: { category: "{{category}}" } } }),
+      ]),
+    ]),
+  ]),
+  variables: [
+    { name: "firstName", defaultValue: "Asha" },
+    { name: "discount", defaultValue: "20" },
+    { name: "category", defaultValue: "shoes" },
+  ],
+});
+
 export const BENCHMARKS: Record<string, () => Popup> = {
   announcement,
   "full-bleed-image": fullBleedImage,
@@ -242,4 +260,5 @@ export const BENCHMARKS: Record<string, () => Popup> = {
   countdown,
   "layered-image": layeredImage,
   "popup-without-card": cardlessGlass,
+  personalized,
 };
