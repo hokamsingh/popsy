@@ -1,7 +1,7 @@
 "use client";
 import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/no-external.css";
-import { Download, Eye, FilePlus, Home, Upload } from "lucide-react";
+import { Download, Eye, FilePlus, GraduationCap, Home, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { fromPuck, toPuck, type PuckData } from "@/editor/adapters/puck";
@@ -66,6 +66,9 @@ function HeaderTools({ data, onLoad, errors, savedAt, children }: HeaderToolsPro
     <>
       <Link href="/" className="tool tool-link" title="Back to home">
         <Home size={15} aria-hidden /> Home
+      </Link>
+      <Link href="/learn" className="tool tool-link" title="Learn by recreating popups">
+        <GraduationCap size={15} aria-hidden /> Learn
       </Link>
       {errors.length ? (
         <details className="tool-problems">
