@@ -454,11 +454,22 @@ function AppActionEditor({ value, onChange }: { value: AppEventAction; onChange:
       </button>
       <p className={styles.hint}>Values can use variables, e.g. {"{{item.id}}"} inside a repeater.</p>
 
-      <span className={styles.label}>When your app says it worked</span>
+      <ToggleControl
+        label="Close this popup first"
+        hint="Turn on when your app opens its own page or popup (like a checkout), so two popups never stack."
+        checked={value.closeFirst === true}
+        onChange={(closeFirst) => update({ closeFirst: closeFirst || undefined })}
+      />
+
+      {!value.closeFirst && <span className={styles.label}>When your app says it worked</span>}
+      {!value.closeFirst && (
+        <>
       <ChoiceControl label="When it worked" choices={SUCCESS_CHOICES} value={value.onSuccess} unsetLabel="Keep the popup open" onChange={(onSuccess) => update({ onSuccess: onSuccess as AppEventAction["onSuccess"] })} />
       <input className={styles.text} aria-label="Message when it worked" placeholder="Message on the button, e.g. Done! (optional)" value={value.successMessage ?? ""} onChange={(event) => update({ successMessage: event.target.value || undefined })} />
       <input className={styles.text} aria-label="Message if it failed" placeholder="If it fails, e.g. Couldn't start, try again" value={value.errorMessage ?? ""} onChange={(event) => update({ errorMessage: event.target.value || undefined })} />
       <p className={styles.hint}>The button shows a spinner while your app works on it.</p>
+        </>
+      )}
     </>
   );
 }

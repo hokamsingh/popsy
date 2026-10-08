@@ -124,6 +124,8 @@ function useButtonAction(action: Action | undefined) {
       ? undefined
       : async () => {
           if (progress === "busy") return;
+          // The popup closes straight away, so there is no progress to show.
+          if (action.type === "event" && action.closeFirst) return void run(action);
           setProgress("busy");
           const status = await run(action);
           if (!mounted.current) return;
