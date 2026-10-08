@@ -1,4 +1,5 @@
-import { z } from "zod";
+import * as z from "zod/mini";
+import { describeIssue } from "./issues";
 import { isTokenName } from "@/design-system/tokens";
 import { DECLARED_VARIABLE_NAME, NODE_ID } from "./validation";
 import { COMPONENT_MAP } from "./components";
@@ -13,32 +14,28 @@ export const POSITIONS = [
 ] as const;
 export const ANIMATIONS = ["none", "fade", "scale", "slide-up", "slide-down"] as const;
 
-export const settingsSchema = z
-  .object({
-    title: z.string().max(200).default("Popup"),
-    width: css.default("480px"),
-    maxWidth: css.default("calc(100vw - 32px)"),
-    height: css.default("auto"),
-    maxHeight: css.default("calc(100vh - 32px)"),
-    position: z.enum(POSITIONS).default("center"),
-    overlay: z.boolean().default(true),
-    overlayColor: css.default("rgba(15,23,42,0.55)"),
-    overlayBlur: css.optional(),
-    closeButtonColor: css.optional(),
-    background: css.default("token:color.background"),
-    radius: css.default("token:radius.lg"),
-    shadow: css.default("token:shadow.lg"),
-    animation: z.enum(ANIMATIONS).default("scale"),
-    closeOnEscape: z.boolean().default(true),
-    closeOnOverlayClick: z.boolean().default(true),
-    showCloseButton: z.boolean().default(true),
-    lockScroll: z.boolean().default(true),
-    zIndex: z.number().int().min(0).max(2147483647).default(1000),
-    tokens: z
-      .record(z.string().refine(isTokenName, "invalid token name"), css)
-      .default({}),
-  })
-  .strict();
+export const settingsSchema = z.strictObject({
+  title: z._default(z.string().check(z.maxLength(200)), "Popup"),
+  width: z._default(css, "480px"),
+  maxWidth: z._default(css, "calc(100vw - 32px)"),
+  height: z._default(css, "auto"),
+  maxHeight: z._default(css, "calc(100vh - 32px)"),
+  position: z._default(z.enum(POSITIONS), "center"),
+  overlay: z._default(z.boolean(), true),
+  overlayColor: z._default(css, "rgba(15,23,42,0.55)"),
+  overlayBlur: z.optional(css),
+  closeButtonColor: z.optional(css),
+  background: z._default(css, "token:color.background"),
+  radius: z._default(css, "token:radius.lg"),
+  shadow: z._default(css, "token:shadow.lg"),
+  animation: z._default(z.enum(ANIMATIONS), "scale"),
+  closeOnEscape: z._default(z.boolean(), true),
+  closeOnOverlayClick: z._default(z.boolean(), true),
+  showCloseButton: z._default(z.boolean(), true),
+  lockScroll: z._default(z.boolean(), true),
+  zIndex: z._default(z.int().check(z.gte(0), z.lte(2147483647)), 1000),
+  tokens: z._default(z.record(z.string().check(z.refine(isTokenName, "invalid token name")), css), () => ({})),
+});
 
 export type PopupSettings = z.infer<typeof settingsSchema>;
 
@@ -46,14 +43,12 @@ export const MAX_VARIABLES = 50;
 export const MAX_LIST_SAMPLE = 50;
 
 /** A value the host page can fill in wherever the popup says `{{name}}`. */
-export const variableSchema = z
-  .object({
-    name: z.string().regex(DECLARED_VARIABLE_NAME, "use letters, numbers and _ only, starting with a letter (dots reach into nested values)"),
-    defaultValue: z.string().max(1000).default(""),
-    /** Makes this a list variable: sample items shown in the editor and used when the website sends no list. */
-    sample: z.array(z.unknown()).max(MAX_LIST_SAMPLE).optional(),
-  })
-  .strict();
+export const variableSchema = z.strictObject({
+  name: z.string().check(z.regex(DECLARED_VARIABLE_NAME, "use letters, numbers and _ only, starting with a letter (dots reach into nested values)")),
+  defaultValue: z._default(z.string().check(z.maxLength(1000)), ""),
+  /** Makes this a list variable: sample items shown in the editor and used when the website sends no list. */
+  sample: z.optional(z.array(z.unknown()).check(z.maxLength(MAX_LIST_SAMPLE))),
+});
 
 export type PopupVariable = z.infer<typeof variableSchema>;
 
@@ -65,31 +60,26 @@ export interface PopupNode {
   children?: PopupNode[];
 }
 
-const nodeShape: z.ZodType<PopupNode> = z.lazy(() =>
-  z
-    .object({
-      id: z.string().regex(NODE_ID, "invalid node id"),
-      type: z.string(),
-      props: z.record(z.string(), z.unknown()).default({}),
-      style: styleSchema.optional(),
-      children: z.array(nodeShape).optional(),
-    })
-    .strict(),
-) as z.ZodType<PopupNode>;
+const nodeShape: z.ZodMiniType<PopupNode> = z.lazy(() =>
+  z.strictObject({
+    id: z.string().check(z.regex(NODE_ID, "invalid node id")),
+    type: z.string(),
+    props: z._default(z.record(z.string(), z.unknown()), () => ({})),
+    style: z.optional(styleSchema),
+    children: z.optional(z.array(nodeShape)),
+  }),
+) as unknown as z.ZodMiniType<PopupNode>;
 
-export const popupSchema = z
-  .object({
-    version: z.number().int().min(1),
-    type: z.literal("popup"),
-    meta: z
-      .object({ name: z.string().max(200).optional(), description: z.string().max(1000).optional() })
-      .passthrough()
-      .optional(),
-    settings: settingsSchema.default(() => settingsSchema.parse({})),
-    variables: z.array(variableSchema).max(MAX_VARIABLES).default([]),
-    children: z.array(nodeShape).default([]),
-  })
-  .strict();
+export const popupSchema = z.strictObject({
+  version: z.int().check(z.gte(1)),
+  type: z.literal("popup"),
+  meta: z.optional(
+    z.looseObject({ name: z.optional(z.string().check(z.maxLength(200))), description: z.optional(z.string().check(z.maxLength(1000))) }),
+  ),
+  settings: z._default(settingsSchema, () => settingsSchema.parse({})),
+  variables: z._default(z.array(variableSchema).check(z.maxLength(MAX_VARIABLES)), () => []),
+  children: z._default(z.array(nodeShape), () => []),
+});
 
 export interface Popup {
   version: number;
@@ -112,14 +102,17 @@ export type ParseResult =
 const fmtPath = (path: ReadonlyArray<PropertyKey>) =>
   path.reduce<string>((acc, p) => (typeof p === "number" ? `${acc}[${p}]` : acc ? `${acc}.${String(p)}` : String(p)), "");
 
+/** Keeps the offending value on each issue so messages can say what was received. */
+const REPORT_INPUT = { reportInput: true } as const;
+
 export function parsePopup(input: unknown): ParseResult {
   const migrated = migratePopup(input);
   if (!migrated.success) return migrated;
-  const base = popupSchema.safeParse(migrated.data);
+  const base = popupSchema.safeParse(migrated.data, REPORT_INPUT);
   if (!base.success) {
     return {
       success: false,
-      errors: base.error.issues.map((i) => ({ path: fmtPath(i.path), message: i.message })),
+      errors: base.error.issues.map((i) => ({ path: fmtPath(i.path), message: describeIssue(i) })),
     };
   }
   const popup = base.data as Popup;
@@ -143,13 +136,13 @@ export function parsePopup(input: unknown): ParseResult {
         errors.push({ path: `${here}.type`, message: `unknown component type "${node.type}"` });
         return node;
       }
-      const props = def.props.safeParse(node.props);
+      const props = def.props.safeParse(node.props, REPORT_INPUT);
       let nextProps = node.props;
       if (props.success) nextProps = props.data;
       else {
         for (const issue of props.error.issues) {
           const sub = fmtPath(issue.path);
-          errors.push({ path: sub ? `${here}.props.${sub}` : `${here}.props`, message: issue.message });
+          errors.push({ path: sub ? `${here}.props.${sub}` : `${here}.props`, message: describeIssue(issue) });
         }
       }
       if (node.children?.length && !def.container) {
