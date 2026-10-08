@@ -1,6 +1,6 @@
 {
   "name": "@popsy-render/runtime",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Render Popsy popups (canonical popup JSON) in React 18/19 apps, including Next.js.",
   "license": "UNLICENSED",
   "type": "module",
@@ -28,8 +28,5 @@
   },
   "scripts": {
     "build": "tsup"
-  },
-  "dependencies": {
-    "zod": "^4.6.5"
   }
 }
