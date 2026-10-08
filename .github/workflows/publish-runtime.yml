@@ -1,0 +1,81 @@
+# Publishes @popsy-render/runtime to npm when a GitHub release tagged `runtime-vX.Y.Z` is published.
+# The tag's version must match packages/runtime/package.json. Needs the repo secret NPM_TOKEN
+# (an npm "Automation" or granular access token with publish rights on the @popsy-render scope).
+name: Publish runtime package
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and check everything, but don't publish"
+        type: boolean
+        default: true
+
+concurrency:
+  group: publish-runtime
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'runtime-v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Read the package version
+        id: version
+        run: echo "version=$(node -p "require('./packages/runtime/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Check the release tag matches the package version
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [ "$TAG" != "runtime-v$VERSION" ]; then
+            echo "::error::Release tag $TAG does not match packages/runtime/package.json version $VERSION (expected runtime-v$VERSION)."
+            exit 1
+          fi
+
+      - name: Check this version isn't on npm yet
+        id: exists
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if npm view "@popsy-render/runtime@$VERSION" version >/dev/null 2>&1; then
+            echo "already=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::@popsy-render/runtime@$VERSION is already published; bump the version to release again."
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build:runtime
+
+      - name: Publish to npm
+        if: steps.exists.outputs.already == 'false' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        working-directory: packages/runtime
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # Provenance links the package to this build; npm only allows it from public repos.
+          PROVENANCE: ${{ github.event.repository.private && '' || '--provenance' }}
+        run: npm publish --access public $PROVENANCE
+
+      - name: Dry run (nothing published)
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+        working-directory: packages/runtime
+        run: npm publish --access public --dry-run
