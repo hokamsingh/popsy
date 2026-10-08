@@ -249,3 +249,51 @@
   padding: 1px 4px;
   border-radius: 4px;
 }
+
+.framePage {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #e2e8f0, #f8fafc);
+}
+
+.note {
+  margin: -4px 0 0;
+  color: #475569;
+  font-size: 13px;
+}
+
+.segmented {
+  display: inline-flex;
+  justify-self: start;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.segmented button {
+  padding: 6px 12px;
+  border: 0;
+  border-right: 1px solid #cbd5e1;
+  background: #fff;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.segmented button:last-child {
+  border-right: 0;
+}
+
+.segmentOn {
+  background: #eef2ff !important;
+  color: #3730a3;
+}
+
+.deviceFrame {
+  display: block;
+  max-width: 100%;
+  height: 720px;
+  margin: 0 auto;
+  border: 10px solid #0f172a;
+  border-radius: 24px;
+  background: #fff;
+}

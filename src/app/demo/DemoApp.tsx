@@ -31,6 +31,43 @@ const SNIPPET_HANDLERS: Record<Outcome, string> = {
   "back-out": `avail: async ({ id }) => false,      // false: the person backed out, button resets`,
 };
 
+/** What each built-in example demonstrates, shown under the picker. */
+const EXAMPLE_NOTES: Record<string, string> = {
+  announcement: "The basics: badge, heading, text and a Close button.",
+  "full-bleed-image": "Background photo with text on top; the button opens a web address.",
+  "two-column-promotion": "Image beside the offer, stacked on mobile; rich text; app action.",
+  "product-card": "Product photo, price row and an add-to-cart app action.",
+  "pricing-table": "Three plans in a grid that reflows per device.",
+  "typography-heavy": "Type-led layout with sizes per device, a line, and a page link.",
+  "mobile-only": "Only shows on phones: switch the view to Mobile to see it.",
+  "desktop-only": "Hidden on phones: switch to Mobile and it disappears.",
+  "video-popup": "A video player with controls.",
+  glassmorphism: "Frosted-glass card with a blurred page behind it.",
+  countdown: "Countdown to a date; tells your app when it ends.",
+  "layered-image": "Text and badges layered on top of an image.",
+  "popup-without-card": "No card at all: content floats over a blurred page.",
+  personalized: "Variables: name, discount and category filled in by your site.",
+  "multi-offer": "Repeater over a list; each Avail button sends its own item and waits for your app.",
+  "corner-toast": "Bottom-right card, no dimmed page, slides in, uses its own fonts.",
+  "links-and-media": "Clickable image, links in rich text, a timer that starts on open, success message.",
+};
+
+type Device = "desktop" | "tablet" | "mobile";
+const DEVICES: { value: Device; label: string; width?: number }[] = [
+  { value: "desktop", label: "Desktop" },
+  { value: "tablet", label: "Tablet", width: 820 },
+  { value: "mobile", label: "Mobile", width: 390 },
+];
+
+/** Settings the demo sends to its tablet/mobile frame, which renders the popup at that width. */
+interface FrameConfig {
+  source: string;
+  pasted: string;
+  valuesText: string;
+  outcome: Outcome;
+  openCount: number;
+}
+
 const SAVED = "__saved";
 const PASTED = "__pasted";
 
@@ -66,7 +103,14 @@ function appActionNames(value: unknown, names = new Set<string>()): Set<string> 
   return names;
 }
 
+const isFrame = () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("frame");
+
 export default function DemoApp() {
+  // As a frame, this page shows only the popup (at the frame's width) and reports to the page around it.
+  const [frame] = useState(isFrame);
+  const [device, setDevice] = useState<Device>("desktop");
+  const [openCount, setOpenCount] = useState(0);
+  const frameRef = useRef<HTMLIFrameElement>(null);
   const [source, setSource] = useState("multi-offer");
   const [pasted, setPasted] = useState("");
   const [valuesText, setValuesText] = useState(() => JSON.stringify(STARTING_VALUES, null, 2));
@@ -80,7 +124,46 @@ export default function DemoApp() {
     outcomeRef.current = outcome;
   }, [outcome]);
 
-  const note = useCallback((line: string) => setLog((lines) => [`${new Date().toLocaleTimeString()}  ${line}`, ...lines].slice(0, 12)), []);
+  const note = useCallback(
+    (line: string) => {
+      const entry = `${new Date().toLocaleTimeString()}  ${line}`;
+      if (frame) window.parent.postMessage({ type: "popsy-demo-log", entry }, window.location.origin);
+      else setLog((lines) => [entry, ...lines].slice(0, 12));
+    },
+    [frame],
+  );
+
+  // Frame: take settings from the page around it.
+  useEffect(() => {
+    if (!frame) return;
+    const receive = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.data?.type !== "popsy-demo-config") return;
+      const config = event.data.config as FrameConfig;
+      setSource(config.source);
+      setPasted(config.pasted);
+      setValuesText(config.valuesText);
+      setOutcome(config.outcome);
+      setOpen(true);
+    };
+    window.addEventListener("message", receive);
+    window.parent.postMessage({ type: "popsy-demo-ready" }, window.location.origin);
+    return () => window.removeEventListener("message", receive);
+  }, [frame]);
+
+  // Page: collect the frame's log, and send it the current settings whenever they change.
+  const frameConfig = useMemo<FrameConfig>(() => ({ source, pasted, valuesText, outcome, openCount }), [source, pasted, valuesText, outcome, openCount]);
+  useEffect(() => {
+    if (frame) return;
+    const send = () => frameRef.current?.contentWindow?.postMessage({ type: "popsy-demo-config", config: frameConfig }, window.location.origin);
+    const receive = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === "popsy-demo-log") setLog((lines) => [event.data.entry as string, ...lines].slice(0, 12));
+      if (event.data?.type === "popsy-demo-ready") send();
+    };
+    window.addEventListener("message", receive);
+    send();
+    return () => window.removeEventListener("message", receive);
+  }, [frame, frameConfig, device]);
 
   const raw = useMemo<unknown>(() => {
     if (source === SAVED) return loadPopup();
@@ -166,7 +249,9 @@ export default function DemoApp() {
 />`;
 
   return (
-    <div className={styles.page}>
+    <div className={frame ? styles.framePage : styles.page}>
+      {!frame && (
+        <>
       <header className={styles.siteHeader}>
         <span className={styles.siteLogo}>Your website</span>
         <span className={styles.siteNote}>This page installs @popsy-render/runtime from npm, like your site would.</span>
@@ -200,6 +285,7 @@ export default function DemoApp() {
           {source === PASTED && (
             <textarea className={styles.code} rows={6} placeholder='{"version":1,"type":"popup",…}' value={pasted} onChange={(e) => setPasted(e.target.value)} spellCheck={false} />
           )}
+          {EXAMPLE_NOTES[source] && <p className={styles.note}>{EXAMPLE_NOTES[source]}</p>}
           {parsed && !parsed.success && (
             <ul className={styles.errors}>
               {parsed.errors.slice(0, 5).map((e) => (
@@ -232,8 +318,20 @@ export default function DemoApp() {
             </select>
           </label>
 
+          <div className={styles.field}>
+            <span>View as</span>
+            <div className={styles.segmented} role="group" aria-label="View as">
+              {DEVICES.map((d) => (
+                <button key={d.value} type="button" aria-pressed={device === d.value} className={device === d.value ? styles.segmentOn : undefined} onClick={() => setDevice(d.value)}>
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <button type="button" className={styles.primary} onClick={() => {
               setOpen(true);
+              setOpenCount((n) => n + 1);
               note("popup opened");
             }}>
             Open popup
@@ -249,17 +347,33 @@ export default function DemoApp() {
         </section>
 
         <section className={styles.stage} aria-label="Your website's page">
-          <div className={styles.fakeContent} aria-hidden>
-            <div />
-            <div />
-            <div />
-          </div>
+          {device === "desktop" ? (
+            <div className={styles.fakeContent} aria-hidden>
+              <div />
+              <div />
+              <div />
+            </div>
+          ) : (
+            <iframe
+              ref={frameRef}
+              key={device}
+              title={`Your website on ${device}`}
+              src="/demo?frame"
+              className={styles.deviceFrame}
+              style={{ width: DEVICES.find((d) => d.value === device)?.width }}
+            />
+          )}
         </section>
       </div>
 
-      {parsed?.success && <PopupRenderer popup={parsed.data} open={open} onDismiss={onDismiss} variables={variables} actions={actions} />}
+        </>
+      )}
 
-      {pending?.kind === "popup" && (
+      {parsed?.success && (frame || device === "desktop") && (
+        <PopupRenderer popup={parsed.data} open={open} onDismiss={onDismiss} variables={variables} actions={actions} />
+      )}
+
+      {pending?.kind === "popup" && (frame || device === "desktop") && (
         <div className={styles.checkoutBackdrop}>
           <div className={styles.checkout} role="dialog" aria-modal="true" aria-labelledby="checkout-title">
             <h2 id="checkout-title">Your checkout popup</h2>
@@ -271,7 +385,7 @@ export default function DemoApp() {
         </div>
       )}
 
-      {(pending?.kind === "page" || receipt) && (
+      {(pending?.kind === "page" || receipt) && (frame || device === "desktop") && (
         <div className={styles.checkoutPage} role="main" aria-labelledby="checkout-page-title">
           <header className={styles.siteHeader}>
             <span className={styles.siteLogo}>Your website</span>
