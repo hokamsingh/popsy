@@ -7,14 +7,29 @@ import { loadPopup } from "@/editor/storage";
 import { BENCHMARKS } from "@/templates/benchmarks";
 import styles from "./demo.module.css";
 
-type Outcome = "ask" | "succeed" | "fail" | "back-out";
+type Outcome = "checkout-page" | "checkout-popup" | "succeed" | "fail" | "back-out";
 
-const OUTCOMES: { value: Outcome; label: string }[] = [
-  { value: "ask", label: "Show a pretend checkout and let me choose" },
-  { value: "succeed", label: "Always succeed after 1 second" },
-  { value: "fail", label: "Always fail after 1 second" },
-  { value: "back-out", label: "The person backs out" },
+const OUTCOMES: { value: Outcome; label: string; group: string }[] = [
+  { value: "checkout-page", label: "Open a checkout page", group: "Close the Popsy popup, then…" },
+  { value: "checkout-popup", label: "Open a checkout popup", group: "Close the Popsy popup, then…" },
+  { value: "succeed", label: "Succeed after 1 second", group: "Keep the popup open (button shows progress) and…" },
+  { value: "fail", label: "Fail after 1 second", group: "Keep the popup open (button shows progress) and…" },
+  { value: "back-out", label: "The person backs out", group: "Keep the popup open (button shows progress) and…" },
 ];
+
+const SNIPPET_HANDLERS: Record<Outcome, string> = {
+  "checkout-page": `avail: ({ id }) => {
+      setOpen(false);                          // close the Popsy popup first
+      router.push(\`/checkout?package=\${id}\`); // then your own checkout page
+    },`,
+  "checkout-popup": `avail: async ({ id }) => {
+      setOpen(false);                          // close the Popsy popup first
+      return openCheckoutModal(id);            // then your own checkout popup
+    },`,
+  succeed: `avail: async ({ id }) => api.claim(id), // resolves: button shows success`,
+  fail: `avail: async ({ id }) => api.claim(id), // throws: button shows the failure message`,
+  "back-out": `avail: async ({ id }) => false,      // false: the person backed out, button resets`,
+};
 
 const SAVED = "__saved";
 const PASTED = "__pasted";
@@ -32,6 +47,7 @@ const STARTING_VALUES = {
 };
 
 interface PendingAction {
+  kind: "page" | "popup";
   name: string;
   payload: Record<string, unknown> | undefined;
   resolve: (outcome: "done" | "cancelled" | "failed") => void;
@@ -54,7 +70,8 @@ export default function DemoApp() {
   const [source, setSource] = useState("multi-offer");
   const [pasted, setPasted] = useState("");
   const [valuesText, setValuesText] = useState(() => JSON.stringify(STARTING_VALUES, null, 2));
-  const [outcome, setOutcome] = useState<Outcome>("ask");
+  const [outcome, setOutcome] = useState<Outcome>("checkout-page");
+  const [receipt, setReceipt] = useState<string | null>(null);
   const [open, setOpen] = useState(true);
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [log, setLog] = useState<string[]>([]);
@@ -107,11 +124,15 @@ export default function DemoApp() {
         note(`${name}: person backed out`);
         return false;
       }
-      const result = await new Promise<"done" | "cancelled" | "failed">((resolve) => setPending({ name, payload, resolve }));
+      // Your app takes over: close the Popsy popup, then show its own checkout.
+      setOpen(false);
+      note("your app closed the popup");
+      const kind = mode === "checkout-page" ? "page" : "popup";
+      const result = await new Promise<"done" | "cancelled" | "failed">((resolve) => setPending({ kind, name, payload, resolve }));
+      note(`${name}: ${result === "done" ? "paid" : result === "failed" ? "card declined" : "cancelled"}`);
+      if (kind === "page") setReceipt(result === "done" ? "Payment complete. Your coins are on their way." : result === "failed" ? "Your card was declined." : "Checkout cancelled.");
       setPending(null);
-      note(`${name}: ${result}`);
-      if (result === "failed") throw new Error(`${name}: payment declined`);
-      return result === "cancelled" ? false : undefined;
+      return result === "done" ? undefined : false;
     },
     [note],
   );
@@ -139,7 +160,7 @@ export default function DemoApp() {
   popup={popupFromYourBackend}
   variables={${values.ok ? JSON.stringify(Object.fromEntries(Object.entries(values.value).map(([k, v]) => [k, Array.isArray(v) ? `[…${v.length} items]` : v]))) : "{ … }"}}
   actions={{ handlers: {
-    avail: async ({ id }) => openCheckout(id), // resolve = worked, throw = failed, false = backed out
+    ${SNIPPET_HANDLERS[outcome]}
   } }}
   onDismiss={() => setOpen(false)}
 />`;
@@ -199,10 +220,14 @@ export default function DemoApp() {
           <label className={styles.field}>
             <span>When a button asks your app to act</span>
             <select value={outcome} onChange={(e) => setOutcome(e.target.value as Outcome)}>
-              {OUTCOMES.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
+              {[...new Set(OUTCOMES.map((o) => o.group))].map((group) => (
+                <optgroup key={group} label={group}>
+                  {OUTCOMES.filter((o) => o.group === group).map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </label>
@@ -234,27 +259,60 @@ export default function DemoApp() {
 
       {parsed?.success && <PopupRenderer popup={parsed.data} open={open} onDismiss={onDismiss} variables={variables} actions={actions} />}
 
-      {pending && (
+      {pending?.kind === "popup" && (
         <div className={styles.checkoutBackdrop}>
           <div className={styles.checkout} role="dialog" aria-modal="true" aria-labelledby="checkout-title">
-            <h2 id="checkout-title">Pretend checkout</h2>
+            <h2 id="checkout-title">Your checkout popup</h2>
             <p>
-              Your app received <code>{pending.name}</code> with <code>{JSON.stringify(pending.payload ?? {})}</code>. Your real app would open its own flow here.
+              The Popsy popup closed first. Your app received <code>{pending.name}</code> with <code>{JSON.stringify(pending.payload ?? {})}</code>.
             </p>
-            <div className={styles.checkoutButtons}>
-              <button type="button" className={styles.primary} onClick={() => pending.resolve("done")}>
-                Pay (succeeds)
-              </button>
-              <button type="button" onClick={() => pending.resolve("failed")}>
-                Card declined (fails)
-              </button>
-              <button type="button" onClick={() => pending.resolve("cancelled")}>
-                Cancel (backs out)
-              </button>
-            </div>
+            <CheckoutButtons onResult={pending.resolve} />
           </div>
         </div>
       )}
+
+      {(pending?.kind === "page" || receipt) && (
+        <div className={styles.checkoutPage} role="main" aria-labelledby="checkout-page-title">
+          <header className={styles.siteHeader}>
+            <span className={styles.siteLogo}>Your website</span>
+            <span className={styles.siteNote}>/checkout{pending?.payload?.id !== undefined ? `?package=${String(pending.payload.id)}` : ""}</span>
+          </header>
+          <div className={styles.checkoutPageBody}>
+            <h1 id="checkout-page-title">Checkout</h1>
+            {pending ? (
+              <>
+                <p>
+                  The popup closed and your app opened its checkout page for <code>{JSON.stringify(pending.payload ?? {})}</code>.
+                </p>
+                <CheckoutButtons onResult={pending.resolve} />
+              </>
+            ) : (
+              <>
+                <p>{receipt}</p>
+                <button type="button" className={styles.primary} onClick={() => setReceipt(null)}>
+                  Back to the site
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CheckoutButtons({ onResult }: { onResult: PendingAction["resolve"] }) {
+  return (
+    <div className={styles.checkoutButtons}>
+      <button type="button" className={styles.primary} onClick={() => onResult("done")}>
+        Pay
+      </button>
+      <button type="button" onClick={() => onResult("failed")}>
+        Card declined
+      </button>
+      <button type="button" onClick={() => onResult("cancelled")}>
+        Cancel
+      </button>
     </div>
   );
 }
