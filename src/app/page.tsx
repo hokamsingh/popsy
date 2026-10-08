@@ -20,6 +20,7 @@ export default function Home() {
         <nav className={styles.nav} aria-label="Main">
           <span className={styles.logo}>Popsy</span>
           <div className={styles.navLinks}>
+            <Link href="/learn">Learn &amp; practice</Link>
             <Link href="/preview">Your popup</Link>
             <Link href="/demo">Integration demo</Link>
             <Link href="/editor" className={styles.navCta}>
@@ -41,6 +42,9 @@ export default function Home() {
             <div className={styles.ctas}>
               <Link href="/editor" className={styles.primary}>
                 Start building <ArrowRight size={18} aria-hidden />
+              </Link>
+              <Link href="/learn" className={styles.secondary}>
+                Learn &amp; practice
               </Link>
               <Link href="/preview" className={styles.secondary}>
                 See your saved popup
