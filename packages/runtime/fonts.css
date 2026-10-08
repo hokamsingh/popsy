@@ -1,4 +1,4 @@
-/* Every font the Popsy editor offers. Import once: `import "@popsy/runtime/fonts.css"`. */
+/* Every font the Popsy editor offers. Import once: `import "@popsy-render/runtime/fonts.css"`. */
 @import "@fontsource-variable/inter/index.css";
 @import "@fontsource-variable/montserrat/index.css";
 @import "@fontsource-variable/nunito/index.css";

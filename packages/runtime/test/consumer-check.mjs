@@ -4,7 +4,7 @@ import { JSDOM } from "jsdom";
 const fixtures = JSON.parse(readFileSync(process.argv[2], "utf8"));
 const React = (await import("react")).default;
 const { renderToString } = await import("react-dom/server");
-const { PopupRenderer, parsePopup } = await import("@popsy/runtime");
+const { PopupRenderer, parsePopup } = await import("@popsy-render/runtime");
 const h = React.createElement;
 console.log("react", React.version);
 

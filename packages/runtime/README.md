@@ -1,18 +1,18 @@
-# @popsy/runtime
+# @popsy-render/runtime
 
 Renders Popsy popups (the JSON the Popsy editor exports) in any React 18 or 19 app, including the
 Next.js App Router. The editor is not included. The bundle is about 57 KB minified, plus `zod`.
 
 ```bash
-npm i @popsy/runtime   # peer deps: react, react-dom (18.2+ or 19)
+npm i @popsy-render/runtime   # peer deps: react, react-dom (18.2+ or 19)
 ```
 
 ```tsx
 // app/layout.tsx: load the fonts the editor offers (optional, once)
-import "@popsy/runtime/fonts.css";
+import "@popsy-render/runtime/fonts.css";
 
 // any page or component; the package is already a client module, so server pages can import it
-import { PopupRenderer, parsePopup } from "@popsy/runtime";
+import { PopupRenderer, parsePopup } from "@popsy-render/runtime";
 
 <PopupRenderer
   popup={popupJson}                              // from your backend
@@ -42,3 +42,11 @@ cd packages/runtime && npm pack    # a tarball any app can install
 `test/consumer-check.mjs` server-renders every example and clicks through the multi-offer popup in a
 DOM. Run it from a scratch project that installed the tarball, `react`, `react-dom` and `jsdom`:
 `node consumer-check.mjs fixtures.json`.
+
+## Publishing
+
+The `@popsy-render` npm scope is unclaimed. To publish:
+
+1. On npmjs.com, create the organization `popsy-render` (free for public packages; private packages need a paid org).
+2. `npm run build:runtime`, then from `packages/runtime`: `npm publish --access public`
+   (or `--access restricted` for a private package).
