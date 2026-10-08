@@ -39,9 +39,11 @@ const SHELL_CSS = `
 .pp-anim-slide-up{animation:pp-slide-up .25s ease-out both}
 .pp-anim-slide-down{animation:pp-slide-down .25s ease-out both}
 .pp-shell-close{position:absolute;top:8px;right:8px;z-index:2;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:0;border-radius:9999px;background:color-mix(in srgb,currentColor 10%,transparent);color:var(--pp-close-color,#0f172a);cursor:pointer}
+.pp-spinner{display:inline-block;width:1em;height:1em;border:2px solid currentColor;border-right-color:transparent;border-radius:9999px;animation:pp-spin .7s linear infinite;flex-shrink:0}
+@keyframes pp-spin{to{transform:rotate(360deg)}}
 .pp-shell-close:hover{background:color-mix(in srgb,currentColor 22%,transparent)}
 .pp-shell-close:focus-visible,[data-pp-dialog] :focus-visible{outline:2px solid var(--pp-color-primary);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){.pp-anim-fade,.pp-anim-scale,.pp-anim-slide-up,.pp-anim-slide-down{animation:none}}
+@media (prefers-reduced-motion:reduce){.pp-spinner{animation-duration:2s}.pp-anim-fade,.pp-anim-scale,.pp-anim-slide-up,.pp-anim-slide-down{animation:none}}
 `;
 
 const FOCUSABLE =

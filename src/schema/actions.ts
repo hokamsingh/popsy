@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { isSafeLinkUrl } from "./validation";
 
+/** `stay` keeps the popup open; `close` dismisses it. */
+export const EVENT_SUCCESS_BEHAVIORS = ["stay", "close"] as const;
+
 export const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("dismiss") }).strict(),
   z
@@ -21,6 +24,11 @@ export const actionSchema = z.discriminatedUnion("type", [
       type: z.literal("event"),
       name: z.string().regex(/^[A-Za-z][A-Za-z0-9_.:-]{0,63}$/, "invalid event name"),
       payload: z.record(z.string(), z.unknown()).optional(),
+      /** What happens once the app reports the action succeeded. */
+      onSuccess: z.enum(EVENT_SUCCESS_BEHAVIORS).optional(),
+      successMessage: z.string().max(200).optional(),
+      /** Shown on the button when the app reports the action failed. */
+      errorMessage: z.string().max(200).optional(),
     })
     .strict(),
 ]);

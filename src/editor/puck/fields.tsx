@@ -1,6 +1,7 @@
 "use client";
 import { usePuck, type CustomField } from "@puckeditor/core";
-import { useRef, type ReactElement } from "react";
+import { X } from "lucide-react";
+import { useRef, useState, type ReactElement } from "react";
 import type { Size } from "@/design-system/layers";
 import type { Responsive } from "@/design-system/responsive";
 import type { Style } from "@/design-system/styles";
@@ -21,6 +22,7 @@ import { ToggleControl } from "../controls/ToggleControl";
 import { VariablePicker, VariablesControl } from "../controls/VariablesControl";
 import { formatBlur, isoToLocalInput, localInputToIso, parseBlur, parseLength, type LengthUnit } from "../controls/values";
 import { putBadgeOnBlock } from "./overlay";
+import { APP_ACTIONS } from "../appActions";
 import styles from "../controls/controls.module.css";
 
 type Change<T> = (value: T | undefined) => void;
@@ -134,10 +136,33 @@ interface TextFieldOptions {
   variables?: boolean;
 }
 
-function useDeclaredVariableNames(): string[] {
+function useDeclaredVariables(): PopupVariable[] {
   const { appState } = usePuck();
-  const declared = appState.data.root.props?.variables as PopupVariable[] | undefined;
-  return (declared ?? []).map((v) => v.name).filter(Boolean);
+  return ((appState.data.root.props?.variables as PopupVariable[] | undefined) ?? []).filter((v) => v.name);
+}
+
+const isList = (v: PopupVariable) => Array.isArray(v.sample);
+
+/** The repeater the selected block sits in (at any depth), if any. */
+function useEnclosingRepeater(): { source?: string } | null {
+  const { selectedItem, getParentById } = usePuck();
+  let parent = selectedItem ? getParentById(selectedItem.props.id) : undefined;
+  while (parent) {
+    if (parent.type === "Repeater") return parent.props as { source?: string };
+    parent = getParentById(parent.props.id);
+  }
+  return null;
+}
+
+/** Names offered by "Insert a variable": plain variables, plus the item's fields inside a repeater. */
+function useInsertableVariableNames(): string[] {
+  const declared = useDeclaredVariables();
+  const repeater = useEnclosingRepeater();
+  const names = declared.filter((v) => !isList(v)).map((v) => v.name);
+  if (!repeater) return names;
+  const first = declared.find((v) => v.name === (repeater.source ?? "items"))?.sample?.[0];
+  const fields = first && typeof first === "object" && !Array.isArray(first) ? Object.keys(first).map((k) => `item.${k}`) : [];
+  return [...fields, "index", ...names];
 }
 
 interface TextInputProps {
@@ -158,7 +183,7 @@ function TextInput({ label, placeholder, multiline, value, onChange }: TextInput
 
 function TextWithVariables({ label, placeholder, multiline, value, onChange }: TextInputProps) {
   const input = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
-  const names = useDeclaredVariableNames();
+  const names = useInsertableVariableNames();
   const props = { className: styles.text, "aria-label": label, placeholder, value: value ?? "", ref: input };
   return (
     <>
@@ -183,11 +208,35 @@ export const textField = (label: string, { hint, placeholder, multiline, variabl
     </FieldShell>
   ));
 
+function ListVariablePicker({ label, value, onChange }: { label: string; value: string | undefined; onChange: Change<string> }) {
+  const lists = useDeclaredVariables().filter(isList);
+  if (!lists.length) {
+    return <p className={styles.hint}>Add a list variable under Variables first (choose “List” and paste sample items).</p>;
+  }
+  return (
+    <select className={styles.select} aria-label={label} value={value ?? ""} onChange={(event) => onChange(event.target.value || undefined)}>
+      {!lists.some((v) => v.name === value) && <option value={value ?? ""}>{value ? `${value} (not in Variables)` : "Choose a list…"}</option>}
+      {lists.map((v) => (
+        <option key={v.name} value={v.name}>
+          {`${v.name} (${v.sample?.length ?? 0} sample items)`}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+export const listVariableField = (label: string, hint?: string) =>
+  field<string>(label, (value, onChange) => (
+    <FieldShell label={label} hint={hint}>
+      <ListVariablePicker label={label} value={value} onChange={onChange} />
+    </FieldShell>
+  ));
+
 export const variablesField = () =>
   field<PopupVariable[]>("Variables", (value, onChange) => (
     <FieldShell
       label="Variables"
-      hint="Write {{name}} in any text, or {{name|fallback}}. Your website can send the real value; otherwise the default shows (and that's what you see here)."
+      hint="Write {{name}} in any text, or {{name|fallback}}. Your website can send the real value; otherwise the default shows (and that's what you see here). A List holds items for a Repeater."
     >
       <VariablesControl value={value} onChange={onChange} />
     </FieldShell>
@@ -332,6 +381,77 @@ const ACTION_CHOICES: Record<ActionChoice, { label: string; initial: Action | un
   event: { label: "Tell your app (custom signal)", initial: { type: "event", name: "continue" } },
 };
 
+type AppEventAction = Extract<Action, { type: "event" }>;
+type PayloadRow = [key: string, value: string];
+
+const SUCCESS_CHOICES: Choice<string>[] = [
+  { value: "stay", label: "Keep the popup open" },
+  { value: "close", label: "Close the popup" },
+];
+
+const toRows = (payload: Record<string, unknown> | undefined): PayloadRow[] =>
+  Object.entries(payload ?? {}).map(([k, v]) => [k, typeof v === "string" ? v : JSON.stringify(v)]);
+
+/** Settings for "Tell your app": which action, the data sent with it, and what the button does with the answer. */
+function AppActionEditor({ value, onChange }: { value: AppEventAction; onChange: Change<Action> }) {
+  const [rows, setRows] = useState<PayloadRow[]>(() => toRows(value.payload));
+  const known = APP_ACTIONS.find((a) => a.name === value.name);
+  const update = (patch: Partial<AppEventAction>) => onChange({ ...value, ...patch });
+  const setPayload = (next: PayloadRow[]) => {
+    setRows(next);
+    const filled = next.filter(([key]) => key.trim());
+    update({ payload: filled.length ? Object.fromEntries(filled) : undefined });
+  };
+  const chooseAction = (name: string) => {
+    const action = APP_ACTIONS.find((a) => a.name === name);
+    const existing = new Map(rows);
+    const next: PayloadRow[] = action ? action.fields.map((field) => [field, existing.get(field) ?? ""]) : rows;
+    setRows(next);
+    const filled = next.filter(([key]) => key.trim());
+    update({ name, payload: filled.length ? Object.fromEntries(filled) : undefined });
+  };
+
+  return (
+    <>
+      {APP_ACTIONS.length ? (
+        <select className={styles.select} aria-label="App action" value={known ? value.name : ""} onChange={(event) => event.target.value && chooseAction(event.target.value)}>
+          {!known && <option value="">{value.name ? `${value.name} (custom)` : "Choose an action…"}</option>}
+          {APP_ACTIONS.map((a) => (
+            <option key={a.name} value={a.name}>
+              {a.label}
+            </option>
+          ))}
+        </select>
+      ) : null}
+      {!known && (
+        <input className={styles.text} aria-label="App action name" value={value.name} placeholder="claim_offer" onChange={(event) => update({ name: event.target.value })} />
+      )}
+      <p className={styles.hint}>A name your developer listens for, such as claim_offer or start_signup.</p>
+
+      <span className={styles.label}>Data sent with it</span>
+      {rows.map(([key, val], i) => (
+        <div key={i} className={styles.variableRow}>
+          <input className={styles.text} aria-label={`Data ${i + 1} name`} placeholder="id" value={key} onChange={(event) => setPayload(rows.map((r, j) => (j === i ? [event.target.value, r[1]] : r)))} />
+          <input className={styles.text} aria-label={`Data ${i + 1} value`} placeholder="{{item.id}}" value={val} onChange={(event) => setPayload(rows.map((r, j) => (j === i ? [r[0], event.target.value] : r)))} />
+          <button type="button" className={styles.iconButton} aria-label={`Remove ${key || "data"}`} onClick={() => setPayload(rows.filter((_, j) => j !== i))}>
+            <X size={14} aria-hidden />
+          </button>
+        </div>
+      ))}
+      <button type="button" className={styles.linkButton} onClick={() => setRows([...rows, ["", ""]])}>
+        + Add data
+      </button>
+      <p className={styles.hint}>Values can use variables, e.g. {"{{item.id}}"} inside a repeater.</p>
+
+      <span className={styles.label}>When your app says it worked</span>
+      <ChoiceControl label="When it worked" choices={SUCCESS_CHOICES} value={value.onSuccess} unsetLabel="Keep the popup open" onChange={(onSuccess) => update({ onSuccess: onSuccess as AppEventAction["onSuccess"] })} />
+      <input className={styles.text} aria-label="Message when it worked" placeholder="Message on the button, e.g. Done! (optional)" value={value.successMessage ?? ""} onChange={(event) => update({ successMessage: event.target.value || undefined })} />
+      <input className={styles.text} aria-label="Message if it failed" placeholder="If it fails, e.g. Couldn't start, try again" value={value.errorMessage ?? ""} onChange={(event) => update({ errorMessage: event.target.value || undefined })} />
+      <p className={styles.hint}>The button shows a spinner while your app works on it.</p>
+    </>
+  );
+}
+
 export const actionField = (label = "When clicked") =>
   field<Action>(label, (value, onChange) => {
     const text = (current: string, update: (next: string) => Action, placeholder?: string) => (
@@ -358,12 +478,7 @@ export const actionField = (label = "When clicked") =>
             <ToggleControl label="Open in a new tab" checked={value.newTab ?? true} onChange={(newTab) => onChange({ ...value, newTab })} />
           </>
         )}
-        {value?.type === "event" && (
-          <>
-            {text(value.name, (name) => ({ ...value, name }), "claim_offer")}
-            <p className={styles.hint}>A name your developer listens for, such as claim_offer or start_signup.</p>
-          </>
-        )}
+        {value?.type === "event" && <AppActionEditor value={value} onChange={onChange} />}
       </FieldShell>
     );
   });

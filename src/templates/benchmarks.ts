@@ -246,6 +246,42 @@ export const personalized = (): Popup => ({
   ],
 });
 
+/** A list of offers shown by a Repeater. Each card's button asks the app to act on that card's item. */
+export const multiOffer = (): Popup => ({
+  ...build("Multi-offer list", { width: "760px", title: "{{headline}}" }, () => [
+    node("section", {}, { padding: "32px" }, [
+      node("stack", { gap: "20px", align: "stretch" }, undefined, [
+        node("text", { content: "{{headline}}", variant: "heading", align: "center" }),
+        node("repeater", { source: "items", columns: { desktop: "3", mobile: "1" }, gap: "16px", emptyText: "No offers right now." }, undefined, [
+          node("stack", { gap: "8px", align: "center" }, { padding: "20px", border: "1px solid token:color.border", radius: "token:radius.md", background: "token:color.surface" }, [
+            node("badge", { text: "{{item.tag}}", variant: "solid" }),
+            node("text", { content: "{{item.title}}", variant: "subheading", align: "center" }),
+            node("text", { content: "{{item.amount}}", variant: "heading", align: "center" }),
+            node("text", { content: "{{item.price}}", align: "center" }, { color: "token:color.muted" }),
+            node("button", {
+              label: "Avail",
+              fullWidth: true,
+              action: { type: "event", name: "avail", payload: { id: "{{item.id}}" }, onSuccess: "close", errorMessage: "Couldn't start. Try again." },
+            }),
+          ]),
+        ]),
+      ]),
+    ]),
+  ]),
+  variables: [
+    { name: "headline", defaultValue: "Pick your pack" },
+    {
+      name: "items",
+      defaultValue: "",
+      sample: [
+        { id: 12, title: "Starter", amount: "500 coins", price: "$4.99", tag: "New" },
+        { id: 13, title: "Popular", amount: "2,000 coins", price: "$14.99", tag: "Best value" },
+        { id: 14, title: "Mega", amount: "10,000 coins", price: "$49.99", tag: "+20% bonus" },
+      ],
+    },
+  ],
+});
+
 export const BENCHMARKS: Record<string, () => Popup> = {
   announcement,
   "full-bleed-image": fullBleedImage,
@@ -261,4 +297,5 @@ export const BENCHMARKS: Record<string, () => Popup> = {
   "layered-image": layeredImage,
   "popup-without-card": cardlessGlass,
   personalized,
+  "multi-offer": multiOffer,
 };

@@ -70,11 +70,15 @@ export function nodeFromPuck(item: PuckItem): PopupNode {
 }
 
 /** Rows still waiting for a name are left out rather than reported as errors. */
-function variablesFromPuck(value: unknown): { name: unknown; defaultValue: unknown }[] {
+function variablesFromPuck(value: unknown): { name: unknown; defaultValue: unknown; sample?: unknown[] }[] {
   if (!Array.isArray(value)) return [];
   return value
     .filter((row): row is Record<string, unknown> => !!row && typeof row === "object" && typeof row.name === "string" && row.name.trim() !== "")
-    .map((row) => ({ name: (row.name as string).trim(), defaultValue: row.defaultValue ?? "" }));
+    .map((row) => ({
+      name: (row.name as string).trim(),
+      defaultValue: row.defaultValue ?? "",
+      ...(Array.isArray(row.sample) ? { sample: row.sample } : {}),
+    }));
 }
 
 export function fromPuck(data: PuckData): ParseResult {

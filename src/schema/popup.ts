@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { isTokenName } from "@/design-system/tokens";
-import { NODE_ID, VARIABLE_NAME } from "./validation";
+import { DECLARED_VARIABLE_NAME, NODE_ID } from "./validation";
 import { COMPONENT_MAP } from "./components";
 import { cssValue as css, styleSchema, type Style } from "@/design-system/styles";
 import { CURRENT_VERSION, migratePopup } from "./migrations";
@@ -43,12 +43,15 @@ export const settingsSchema = z
 export type PopupSettings = z.infer<typeof settingsSchema>;
 
 export const MAX_VARIABLES = 50;
+export const MAX_LIST_SAMPLE = 50;
 
 /** A value the host page can fill in wherever the popup says `{{name}}`. */
 export const variableSchema = z
   .object({
-    name: z.string().regex(VARIABLE_NAME, "use letters, numbers and _ only, starting with a letter (dots reach into nested values)"),
+    name: z.string().regex(DECLARED_VARIABLE_NAME, "use letters, numbers and _ only, starting with a letter (dots reach into nested values)"),
     defaultValue: z.string().max(1000).default(""),
+    /** Makes this a list variable: sample items shown in the editor and used when the website sends no list. */
+    sample: z.array(z.unknown()).max(MAX_LIST_SAMPLE).optional(),
   })
   .strict();
 
