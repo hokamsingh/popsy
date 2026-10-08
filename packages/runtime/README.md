@@ -46,8 +46,12 @@ DOM. Run it from a scratch project that installed the tarball, `react`, `react-d
 
 ## Publishing
 
-The `@popsy-render` npm scope is unclaimed. To publish:
+Releases are published by `.github/workflows/publish-runtime.yml` with npm trusted publishing, so no
+token is stored anywhere:
 
-1. On npmjs.com, create the organization `popsy-render` (free for public packages; private packages need a paid org).
-2. `npm run build:runtime`, then from `packages/runtime`: `npm publish --access public`
-   (or `--access restricted` for a private package).
+1. One time: on npmjs.com, open the package's **Settings → Trusted Publisher → GitHub Actions** and enter
+   `hokamsingh` / `popsy` / `publish-runtime.yml` (environment empty).
+2. Each release: bump `version` in this folder's `package.json`, merge to `main`, then publish a GitHub
+   release tagged `runtime-v<version>` (e.g. `runtime-v0.2.0`) targeting `main`.
+
+A manual run of the workflow (Actions → Publish runtime package → Run workflow) is a dry run by default.

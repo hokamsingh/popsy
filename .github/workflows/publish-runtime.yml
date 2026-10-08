@@ -1,6 +1,7 @@
 # Publishes @popsy-render/runtime to npm when a GitHub release tagged `runtime-vX.Y.Z` is published.
-# The tag's version must match packages/runtime/package.json. Needs the repo secret NPM_TOKEN
-# (an npm "Automation" or granular access token with publish rights on the @popsy-render scope).
+# The tag's version must match packages/runtime/package.json.
+# Uses npm trusted publishing (no token): on npmjs.com the package's Settings → Trusted Publisher
+# must name GitHub Actions, repository hokamsingh/popsy and workflow publish-runtime.yml.
 name: Publish runtime package
 
 on:
@@ -23,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # npm provenance
+      id-token: write # trusted publishing and provenance
     steps:
       - uses: actions/checkout@v4
 
@@ -31,7 +32,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm 11.5.1 or newer; Node 22 ships with npm 10.
+      - run: npm install -g npm@11
 
       - name: Read the package version
         id: version
@@ -69,11 +72,9 @@ jobs:
       - name: Publish to npm
         if: steps.exists.outputs.already == 'false' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
         working-directory: packages/runtime
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          # Provenance links the package to this build; npm only allows it from public repos.
-          PROVENANCE: ${{ github.event.repository.private && '' || '--provenance' }}
-        run: npm publish --access public $PROVENANCE
+        # No token: npm exchanges this run's GitHub identity for a one-time publish credential,
+        # and adds provenance automatically for public repositories.
+        run: npm publish --access public
 
       - name: Dry run (nothing published)
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run
