@@ -64,6 +64,10 @@ inside a repeater). The host handles it, and may take as long as it needs:
 While the promise is pending the button shows a spinner and is disabled. The designer chooses what
 happens next: close the popup or keep it open, and the messages shown on success or failure.
 
+Tick **Close this popup first** on a button when your app opens its own page or popup (a checkout,
+say): the popup closes immediately, then your handler runs, so two popups never stack. The button shows
+no progress in that case.
+
 Optionally, list the actions your app handles so designers pick from a menu instead of typing:
 `NEXT_PUBLIC_POPSY_APP_ACTIONS='[{"name":"avail","label":"Avail offer","fields":["id"]}]'`.
 

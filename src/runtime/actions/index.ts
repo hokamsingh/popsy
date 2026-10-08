@@ -59,6 +59,7 @@ export function createActionRuntime(opts: ActionRuntimeOptions = {}): ActionRunt
             (opts.openUrl ?? defaultOpenUrl)(action.url, action.newTab ?? true);
             return "done";
           case "event": {
+            if (action.closeFirst) opts.onDismiss?.();
             const handler = handlers.get(action.name);
             if (handler) return (await handler(action.payload)) === false ? "cancelled" : "done";
             if (opts.onEvent) {

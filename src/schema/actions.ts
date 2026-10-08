@@ -22,6 +22,8 @@ export const actionSchema = z.discriminatedUnion("type", [
     type: z.literal("event"),
     name: z.string().check(z.regex(/^[A-Za-z][A-Za-z0-9_.:-]{0,63}$/, "invalid event name")),
     payload: z.optional(z.record(z.string(), z.unknown())),
+    /** Close the popup before asking the app, e.g. when the app opens its own page or popup. */
+    closeFirst: z.optional(z.boolean()),
     /** What happens once the app reports the action succeeded. */
     onSuccess: z.optional(z.enum(EVENT_SUCCESS_BEHAVIORS)),
     successMessage: z.optional(shortText),
