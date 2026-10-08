@@ -128,3 +128,35 @@ describe("schema, editor and examples", () => {
     expect(parseAppActions(undefined)).toEqual([]);
   });
 });
+
+describe("close this popup first", () => {
+  const items = { items: [{ id: 1, title: "A" }] };
+
+  it("closes the popup before the app runs, and shows no progress", async () => {
+    const order: string[] = [];
+    const onDismiss = vi.fn(() => order.push("closed"));
+    const avail = vi.fn(async () => {
+      order.push("app");
+    });
+    render(<PopupRenderer popup={popupWith(card({ closeFirst: true }))} mode="inline" variables={items} onDismiss={onDismiss} actions={{ handlers: { avail } }} />);
+    const button = screen.getByRole("button", { name: "Avail A" });
+    fireEvent.click(button);
+    await waitFor(() => expect(avail).toHaveBeenCalledWith({ id: "1" }));
+    expect(order).toEqual(["closed", "app"]);
+    expect(button.getAttribute("aria-busy")).toBeNull();
+  });
+
+  it("still closes when the app has no handler or fails", async () => {
+    const onDismiss = vi.fn();
+    render(
+      <PopupRenderer popup={popupWith(card({ closeFirst: true }))} mode="inline" variables={items} onDismiss={onDismiss} actions={{ handlers: { avail: () => Promise.reject(new Error("nope")) }, onError: () => {} }} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Avail A" }));
+    await waitFor(() => expect(onDismiss).toHaveBeenCalledOnce());
+  });
+
+  it("is saved in the document and validated", () => {
+    expect(parsePopup(popupWith(card({ closeFirst: true }))).success).toBe(true);
+    expect(parsePopup(popupWith(card({ closeFirst: "yes" }))).success).toBe(false);
+  });
+});
