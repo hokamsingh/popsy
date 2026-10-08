@@ -14,7 +14,7 @@ import { COMPONENTS } from "@/schema/components";
 import { settingsSchema, type PopupSettings, type PopupVariable } from "@/schema/popup";
 import type { Choice } from "../controls/ChoiceControl";
 import {
-  actionField, blurField, choiceField, colorField, dateTimeField, fontField, iconField, layerOnTopField, lengthField, numberField, popupHeightField, radiusField, styleField, textField, themeFontsField, toggleField, variablesField, listVariableField,
+  actionField, blurField, choiceField, colorField, dateTimeField, fontField, iconField, layerOnTopField, lengthField, numberField, popupHeightField, radiusField, styleField, textField, themeFontsField, toggleField, variablesField, listVariableField, numericField,
 } from "./fields";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -202,7 +202,7 @@ const DAYS_FROM_NOW_BY_DEFAULT = 3;
 const countdownFields: Fields = {
   mode: choiceField("Count down", COUNTDOWN_MODE_CHOICES),
   target: dateTimeField("Ends on", "Every visitor sees the same moment, wherever they are. Uses your computer's time zone."),
-  durationMinutes: numberField("Minutes to count down", { min: 1, max: 10080, hint: "Starts fresh each time the popup opens. 60 = one hour, 1440 = one day." }),
+  durationMinutes: numericField("Minutes to count down", { min: 1, max: 10080, hint: "Starts fresh each time the popup opens. 60 = one hour, 1440 = one day." }),
   showDays: toggleField("Show days"),
   showSeconds: toggleField("Show seconds"),
   showLabels: toggleField("Show labels (Days, Hours…)"),
@@ -252,7 +252,7 @@ const components: Record<string, ComponentConfig> = {
       source: listVariableField("Repeat for each item in", "A list variable from Variables. Inside, use {{item.name}} for the item's values and {{index}} for its position (1, 2, 3…)."),
       columns: numberField("Items per row", { perDevice: true, min: 1, max: 6, hint: "Try 3 on desktop and 1 on mobile." }),
       gap,
-      limit: numberField("Show at most", { min: 1, max: 50, hint: "Leave empty to show every item." }),
+      limit: numericField("Show at most", { min: 1, max: 50, hint: "Leave empty to show every item." }),
       emptyText: textField("Text when the list is empty", { variables: true, hint: "Leave empty to hide the block." }),
       children: slot,
     },
@@ -383,7 +383,7 @@ const components: Record<string, ComponentConfig> = {
       name: iconField("Icon", { required: true }),
       size: lengthField("Size", { perDevice: true, slider: { min: 12, max: 96 } }),
       color: colorField("Color"),
-      rotation: numberField("Rotate (degrees)", { min: -360, max: 360, step: 15 }),
+      rotation: numericField("Rotate (degrees)", { min: -360, max: 360, step: 15 }),
       label: textField("Description", { variables: true, hint: "Only needed if the icon carries meaning on its own." }),
     },
     adapt(Icon),

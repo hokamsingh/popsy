@@ -24,6 +24,10 @@ export const ORIENTATIONS = ["horizontal", "vertical"] as const;
 export const LINE_STYLES = ["solid", "dashed", "dotted"] as const;
 
 const align = responsive(z.enum(ALIGN_VALUES));
+
+/** A number that also accepts numeric text, which older editor versions saved for number settings. */
+const numberish = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((v) => (typeof v === "string" && v.trim() !== "" && !Number.isNaN(Number(v)) ? Number(v) : v), schema);
 const justify = responsive(z.enum(JUSTIFY_VALUES));
 
 export const ICON_NAMES = [
@@ -88,7 +92,7 @@ export const iconProps = z
     name: iconName,
     size: cssR.optional(),
     color: css.optional(),
-    rotation: z.number().min(-360).max(360).optional(),
+    rotation: numberish(z.number().min(-360).max(360)).optional(),
     label: z.string().max(200).optional(),
   })
   .strict();
@@ -147,7 +151,7 @@ export const countdownProps = z
   .object({
     mode: z.enum(COUNTDOWN_MODES).default("date"),
     target: z.string().datetime({ offset: true }).optional(),
-    durationMinutes: z.number().min(1).max(10080).default(15),
+    durationMinutes: numberish(z.number().min(1).max(10080)).default(15),
     showDays: z.boolean().default(true),
     showSeconds: z.boolean().default(true),
     showLabels: z.boolean().default(true),
@@ -168,7 +172,7 @@ export const repeaterProps = z
     source: z.string().regex(DECLARED_VARIABLE_NAME, "pick a list variable").default("items"),
     columns: responsive(css).optional(),
     gap: cssR.optional(),
-    limit: z.number().int().min(1).max(50).optional(),
+    limit: numberish(z.number().int().min(1).max(50)).optional(),
     emptyText: z.string().max(200).optional(),
   })
   .strict();
