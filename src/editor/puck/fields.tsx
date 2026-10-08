@@ -97,6 +97,17 @@ export const numberField = (label: string, { hint, min, max, step, perDevice = f
     );
   });
 
+/**
+ * A number stored as a number. `numberField` stores text because it also feeds CSS values (columns,
+ * line spacing); settings whose schema expects a real number must use this one instead.
+ */
+export const numericField = (label: string, { hint, min, max, step }: Omit<NumberFieldOptions, "perDevice"> = {}) =>
+  field<number>(label, (value, onChange) => (
+    <FieldShell label={label} hint={hint}>
+      <NumberStepper label={label} value={typeof value === "number" ? value : value === undefined ? undefined : Number(value)} min={min} max={max} step={step} onChange={onChange} />
+    </FieldShell>
+  ));
+
 export const colorField = (label: string, hint?: string) =>
   field<string>(label, (value, onChange) => (
     <FieldShell label={label} hint={hint}>
