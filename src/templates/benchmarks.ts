@@ -115,7 +115,8 @@ export const typographyHeavy = () =>
 
 export const mobileOnly = () =>
   build("Mobile-only banner", { position: "bottom", width: "100%", radius: "token:radius.lg", overlay: false }, () => [
-    node("section", {}, { padding: "16px", hidden: { desktop: true, tablet: true, mobile: false } }, [
+    // Extra right padding keeps the Install button clear of the close (×) button.
+    node("section", {}, { padding: "16px 52px 16px 16px", hidden: { desktop: true, tablet: true, mobile: false } }, [
       node("flex", { gap: "12px", align: "center", justify: "between" }, undefined, [
         node("text", { content: "Get the app for a better experience", variant: "label" }),
         node("button", { label: "Install", size: "sm", action: { type: "event", name: "install_app" } }),
@@ -282,6 +283,54 @@ export const multiOffer = (): Popup => ({
   ],
 });
 
+/** A small corner card: no dimmed page, slides in, and uses its own fonts for the whole popup. */
+export const cornerToast = () =>
+  build(
+    "Corner toast",
+    {
+      width: "340px",
+      position: "bottom-right",
+      overlay: false,
+      lockScroll: false,
+      animation: "slide-up",
+      radius: "token:radius.md",
+      tokens: {
+        "font.heading": "'Playfair Display Variable', Georgia, 'Times New Roman', serif",
+        "font.body": "'DM Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+      },
+    },
+    () => [
+      node("section", {}, { padding: "20px" }, [
+        node("stack", { gap: "8px" }, undefined, [
+          node("flex", { gap: "8px", align: "center" }, undefined, [
+            node("icon", { name: "bell", size: "20px", color: "token:color.primary" }),
+            node("text", { content: "New this week", variant: "label" }, { color: "token:color.primary" }),
+          ]),
+          node("text", { content: "Fresh games just landed", variant: "subheading" }),
+          node("text", { content: "The page stays usable behind this card. Close it any time.", variant: "caption" }, { color: "token:color.muted" }),
+          node("flex", { gap: "8px" }, undefined, [
+            node("button", { label: "Take a look", size: "sm", action: { type: "navigate", to: "/games/new" } }),
+            node("button", { label: "Later", size: "sm", variant: "ghost", action: dismiss }),
+          ]),
+        ]),
+      ]),
+    ],
+  );
+
+/** A clickable image, links inside rich text, and a countdown that starts when the popup opens. */
+export const linksAndMedia = () =>
+  build("Links, images and timers", { width: "520px" }, () => [
+    node("section", {}, { padding: "24px" }, [
+      node("stack", { gap: "14px" }, undefined, [
+        node("image", { src: "https://placehold.co/960x400/0f172a/ffffff?text=Click+the+banner", alt: "Summer tournament banner", action: { type: "external_url", url: "https://example.com/tournament", newTab: true } }, { width: "100%", radius: "token:radius.md" }),
+        node("text", { content: "Your bonus is reserved", variant: "subheading" }),
+        node("richtext", { content: "Claim it before the timer runs out. Read the [bonus terms](https://example.com/terms) or visit the [help centre](https://example.com/help).\n\n- Works on every game\n- No code needed" }),
+        node("countdown", { mode: "duration", durationMinutes: 10, showDays: false, look: "plain", size: "md", endText: "This reservation has expired", onEnd: { type: "event", name: "reservation_expired" } }, { color: "token:color.text" }),
+        node("button", { label: "Claim my bonus", fullWidth: true, action: { type: "event", name: "claim_bonus", payload: { source: "links-and-media" }, successMessage: "Bonus added!" } }),
+      ]),
+    ]),
+  ]);
+
 export const BENCHMARKS: Record<string, () => Popup> = {
   announcement,
   "full-bleed-image": fullBleedImage,
@@ -298,4 +347,6 @@ export const BENCHMARKS: Record<string, () => Popup> = {
   "popup-without-card": cardlessGlass,
   personalized,
   "multi-offer": multiOffer,
+  "corner-toast": cornerToast,
+  "links-and-media": linksAndMedia,
 };
