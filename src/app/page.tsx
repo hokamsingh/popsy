@@ -21,6 +21,7 @@ export default function Home() {
           <span className={styles.logo}>Popsy</span>
           <div className={styles.navLinks}>
             <Link href="/preview">Your popup</Link>
+            <Link href="/demo">Integration demo</Link>
             <Link href="/editor" className={styles.navCta}>
               Open editor
             </Link>
