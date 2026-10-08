@@ -1,16 +1,17 @@
 "use client";
 import type { ComponentConfig, Config, Fields } from "@puckeditor/core";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Badge, Button, Icon, Image, RichText, Text, Video } from "@/components/content";
 import { Countdown } from "@/components/content/Countdown";
 import { Container, Divider, Flex, Grid, Layers, Section, Spacer, Stack } from "@/components/layout";
 import { PopupShell } from "@/components/popup/PopupShell";
 import { RuntimeContext } from "@/runtime/context";
+import { createTemplater } from "@/runtime/variables";
 import { COMPONENTS } from "@/schema/components";
-import { settingsSchema, type PopupSettings } from "@/schema/popup";
+import { settingsSchema, type PopupSettings, type PopupVariable } from "@/schema/popup";
 import type { Choice } from "../controls/ChoiceControl";
 import {
-  actionField, blurField, choiceField, colorField, dateTimeField, fontField, iconField, layerOnTopField, lengthField, numberField, popupHeightField, radiusField, styleField, textField, themeFontsField, toggleField,
+  actionField, blurField, choiceField, colorField, dateTimeField, fontField, iconField, layerOnTopField, lengthField, numberField, popupHeightField, radiusField, styleField, textField, themeFontsField, toggleField, variablesField,
 } from "./fields";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -195,7 +196,7 @@ const countdownFields: Fields = {
   showLabels: toggleField("Show labels (Days, Hours…)"),
   look: choiceField("Look", COUNTDOWN_LOOK_CHOICES),
   size: choiceField("Size", BUTTON_SIZE_CHOICES),
-  endText: textField("Message when it ends", { placeholder: "This offer has ended", hint: "Shown instead of the numbers. Leave empty to show zeros." }),
+  endText: textField("Message when it ends", { variables: true, placeholder: "This offer has ended", hint: "Shown instead of the numbers. Leave empty to show zeros." }),
   onEnd: actionField("When it reaches zero"),
 };
 
@@ -290,7 +291,7 @@ const components: Record<string, ComponentConfig> = {
   Text: component(
     "Text",
     {
-      content: textField("Words", { multiline: true }),
+      content: textField("Words", { multiline: true, variables: true }),
       variant: choiceField("Text style", TEXT_STYLE_CHOICES, { hint: "Sets a sensible size and weight. Fine-tune below." }),
       fontSize: lengthField("Text size", { perDevice: true, slider: { min: 10, max: 96 }, units: ["px", "rem"], hint: "Leave empty to use the text style's size." }),
       fontWeight: choiceField("Weight", FONT_WEIGHT_CHOICES, { unsetLabel: "Default", perDevice: true }),
@@ -310,6 +311,7 @@ const components: Record<string, ComponentConfig> = {
     {
       content: textField("Words", {
         multiline: true,
+        variables: true,
         hint: "**bold**, *italic*, __underline__, [link text](https://…). Start a line with - for a bullet list.",
       }),
     },
@@ -319,8 +321,8 @@ const components: Record<string, ComponentConfig> = {
   Image: component(
     "Image",
     {
-      src: textField("Image link", { placeholder: "https://example.com/photo.jpg", hint: "Paste the web address of a picture." }),
-      alt: textField("Description", { hint: "Describe the image for people who can't see it. Leave empty if it's only decoration." }),
+      src: textField("Image link", { variables: true, placeholder: "https://example.com/photo.jpg", hint: "Paste the web address of a picture." }),
+      alt: textField("Description", { variables: true, hint: "Describe the image for people who can't see it. Leave empty if it's only decoration." }),
       objectFit: choiceField("How it fills the space", IMAGE_FIT_CHOICES, { unsetLabel: "Default" }),
       loading: choiceField("Load", LOADING_CHOICES),
       action: actionField(),
@@ -331,8 +333,8 @@ const components: Record<string, ComponentConfig> = {
   Video: component(
     "Video",
     {
-      src: textField("Video link", { placeholder: "https://example.com/video.mp4" }),
-      poster: textField("Cover image link", { hint: "Shown before the video plays." }),
+      src: textField("Video link", { variables: true, placeholder: "https://example.com/video.mp4" }),
+      poster: textField("Cover image link", { variables: true, hint: "Shown before the video plays." }),
       controls: toggleField("Show play controls"),
       autoplay: toggleField("Start automatically", "Browsers only allow this when the video is muted."),
       muted: toggleField("Muted"),
@@ -357,7 +359,7 @@ const components: Record<string, ComponentConfig> = {
       size: lengthField("Size", { perDevice: true, slider: { min: 12, max: 96 } }),
       color: colorField("Color"),
       rotation: numberField("Rotate (degrees)", { min: -360, max: 360, step: 15 }),
-      label: textField("Description", { hint: "Only needed if the icon carries meaning on its own." }),
+      label: textField("Description", { variables: true, hint: "Only needed if the icon carries meaning on its own." }),
     },
     adapt(Icon),
     { name: "star", size: "24px" },
@@ -365,7 +367,7 @@ const components: Record<string, ComponentConfig> = {
   Button: component(
     "Button",
     {
-      label: textField("Button text"),
+      label: textField("Button text", { variables: true }),
       action: actionField("When clicked"),
       variant: choiceField("Look", BUTTON_LOOK_CHOICES),
       size: choiceField("Size", BUTTON_SIZE_CHOICES),
@@ -381,7 +383,7 @@ const components: Record<string, ComponentConfig> = {
   Badge: component(
     "Badge",
     {
-      text: textField("Text"),
+      text: textField("Text", { variables: true }),
       icon: iconField("Icon"),
       variant: choiceField("Look", BADGE_LOOK_CHOICES),
       size: choiceField("Size", [
@@ -394,13 +396,13 @@ const components: Record<string, ComponentConfig> = {
   ),
 };
 
-const EDITING = { run: () => {}, editing: true, scope: "" };
 
 const defaultSettings = settingsSchema.parse({});
 
 const rootFields: Fields = {
   name: textField("Popup name", { hint: "Only you see this." }),
-  title: textField("Title for screen readers", { hint: "Announced when the popup opens. Not shown on screen." }),
+  variables: variablesField(),
+  title: textField("Title for screen readers", { variables: true, hint: "Announced when the popup opens. Not shown on screen." }),
   width: lengthField("Width", { slider: { min: 240, max: 1000, step: 10 }, units: ["px", "%"] }),
   height: popupHeightField("Height", { min: 120, max: 900, step: 10 }),
   tokens: themeFontsField(),
@@ -426,10 +428,13 @@ export const puckConfig: Config = {
   },
   root: {
     fields: rootFields,
-    defaultProps: { name: "", ...defaultSettings },
+    defaultProps: { name: "", variables: [], ...defaultSettings },
     render: function PopupRoot({ children, ...props }: Props) {
+      const declared = props.variables as PopupVariable[] | undefined;
+      // Unknown variables stay visible as {{name}} so authors can spot them.
+      const editing = useMemo(() => ({ run: () => {}, editing: true, scope: "", vars: createTemplater({ declared, keepMissing: true }) }), [declared]);
       return (
-        <RuntimeContext.Provider value={EDITING}>
+        <RuntimeContext.Provider value={editing}>
           <PopupShell settings={props as PopupSettings} mode="inline">
             {children}
           </PopupShell>

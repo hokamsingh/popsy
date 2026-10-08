@@ -24,6 +24,21 @@ Domain behavior is registered by the host app, not the builder:
 <PopupRenderer popup={popup} actions={{ handlers: { claim_bonus: () => api.claim() } }} />
 ```
 
+## Variables
+
+Write `{{name}}` in any text, button label, badge, image/video link, link action, event payload or
+the popup title. Use `{{name|fallback}}` for a per-use fallback and dotted names
+(`{{user.firstName}}`) to reach nested values. The host page supplies values:
+
+```tsx
+<PopupRenderer popup={popup} variables={{ title: "Summer Sale", user: { firstName: "Asha" } }} />
+```
+
+A value is chosen in this order: the host's value → the inline fallback → the default declared in the
+popup's **Variables** list (editor → popup settings) → blank. Values are always plain text: in rich
+text they are filled in after formatting is parsed, inside URLs they are URL-encoded (unless the whole
+URL is one variable), and every URL is safety-checked again after filling.
+
 ## Scripts
 
 `npm run dev` · `npm run build` · `npm test` · `npm run lint` · `npm run typecheck`
@@ -32,5 +47,5 @@ Domain behavior is registered by the host app, not the builder:
 
 MVP (spec phases 1–4): layout, content, styling + responsive values, tokens, dismiss/navigate/
 external URL/event actions, canonical schema + validation + versioning, Puck adapter, preview.
-Not yet built: forms, variables/conditions/repeaters, CustomHTML, templates gallery, server storage
+Variables (`{{name}}`) are supported. Not yet built: forms, conditions/repeaters, CustomHTML, templates gallery, server storage
 (the editor persists to `localStorage`).

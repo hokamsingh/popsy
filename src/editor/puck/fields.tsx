@@ -1,10 +1,11 @@
 "use client";
 import { usePuck, type CustomField } from "@puckeditor/core";
-import type { ReactElement } from "react";
+import { useRef, type ReactElement } from "react";
 import type { Size } from "@/design-system/layers";
 import type { Responsive } from "@/design-system/responsive";
 import type { Style } from "@/design-system/styles";
 import type { Action, ActionType } from "@/schema/actions";
+import type { PopupVariable } from "@/schema/popup";
 import { ICON_NAMES } from "@/schema/components";
 import { ChoiceControl, type Choice } from "../controls/ChoiceControl";
 import { ColorControl } from "../controls/ColorControl";
@@ -17,6 +18,7 @@ import { RadiusControl } from "../controls/RadiusControl";
 import { SizeControl } from "../controls/SizeControl";
 import { StyleEditor } from "../controls/StyleEditor";
 import { ToggleControl } from "../controls/ToggleControl";
+import { VariablePicker, VariablesControl } from "../controls/VariablesControl";
 import { formatBlur, isoToLocalInput, localInputToIso, parseBlur, parseLength, type LengthUnit } from "../controls/values";
 import { putBadgeOnBlock } from "./overlay";
 import styles from "../controls/controls.module.css";
@@ -128,16 +130,66 @@ interface TextFieldOptions {
   hint?: string;
   placeholder?: string;
   multiline?: boolean;
+  /** Offer the popup's variables to insert as `{{name}}`. */
+  variables?: boolean;
 }
 
-export const textField = (label: string, { hint, placeholder, multiline }: TextFieldOptions = {}) =>
+function useDeclaredVariableNames(): string[] {
+  const { appState } = usePuck();
+  const declared = appState.data.root.props?.variables as PopupVariable[] | undefined;
+  return (declared ?? []).map((v) => v.name).filter(Boolean);
+}
+
+interface TextInputProps {
+  label: string;
+  placeholder?: string;
+  multiline?: boolean;
+  value: string | undefined;
+  onChange: Change<string>;
+}
+
+function TextInput({ label, placeholder, multiline, value, onChange }: TextInputProps) {
+  return multiline ? (
+    <textarea className={styles.text} rows={4} aria-label={label} placeholder={placeholder} value={value ?? ""} onChange={(event) => onChange(event.target.value)} />
+  ) : (
+    <input className={styles.text} aria-label={label} placeholder={placeholder} value={value ?? ""} onChange={(event) => onChange(event.target.value || undefined)} />
+  );
+}
+
+function TextWithVariables({ label, placeholder, multiline, value, onChange }: TextInputProps) {
+  const input = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
+  const names = useDeclaredVariableNames();
+  const props = { className: styles.text, "aria-label": label, placeholder, value: value ?? "", ref: input };
+  return (
+    <>
+      {multiline ? (
+        <textarea {...props} rows={4} onChange={(event) => onChange(event.target.value)} />
+      ) : (
+        <input {...props} onChange={(event) => onChange(event.target.value || undefined)} />
+      )}
+      <VariablePicker names={names} target={input} value={value ?? ""} onChange={onChange} />
+    </>
+  );
+}
+
+export const textField = (label: string, { hint, placeholder, multiline, variables }: TextFieldOptions = {}) =>
   field<string>(label, (value, onChange) => (
     <FieldShell label={label} hint={hint}>
-      {multiline ? (
-        <textarea className={styles.text} rows={4} aria-label={label} placeholder={placeholder} value={value ?? ""} onChange={(event) => onChange(event.target.value)} />
+      {variables ? (
+        <TextWithVariables label={label} placeholder={placeholder} multiline={multiline} value={value} onChange={onChange} />
       ) : (
-        <input className={styles.text} aria-label={label} placeholder={placeholder} value={value ?? ""} onChange={(event) => onChange(event.target.value || undefined)} />
+        <TextInput label={label} placeholder={placeholder} multiline={multiline} value={value} onChange={onChange} />
       )}
+    </FieldShell>
+  ));
+
+export const variablesField = () =>
+  field<PopupVariable[]>("Variables", (value, onChange) => (
+    <FieldShell
+      label="Variables"
+      hint="Write {{name}} in any text, or {{name|fallback}}. Your website can send the real value; otherwise the default shows (and that's what you see here)."
+    >
+      <VariablesControl value={value} onChange={onChange} />
     </FieldShell>
   ));
 

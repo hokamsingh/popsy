@@ -52,7 +52,7 @@ export function Countdown({
   onEnd,
   ...node
 }: CountdownProps) {
-  const { run, editing } = useRuntime();
+  const { run, editing, vars } = useRuntime();
   const { remaining, isReady, isFinished } = useCountdown({
     mode,
     target,
@@ -73,7 +73,7 @@ export function Countdown({
       cssProps={{ display: "flex", "align-items": "flex-start", "justify-content": "center", gap: SIZES[size].gap, "font-family": "token:font.body" }}
     >
       {showsEndText ? (
-        <span className="pp-countdown-value">{endText}</span>
+        <span className="pp-countdown-value">{vars.text(endText ?? "")}</span>
       ) : (
         units.map((unit, index) => (
           <CountdownUnit key={unit.key} unit={unit} isReady={isReady} showLabel={showLabels} showSeparator={look === "plain" && index > 0} />

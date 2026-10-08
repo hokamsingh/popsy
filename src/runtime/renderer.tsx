@@ -7,6 +7,7 @@ import { PopupShell, type ShellMode } from "@/components/popup/PopupShell";
 import { parsePopup, type PopupNode } from "@/schema/popup";
 import { createActionRuntime, type ActionRuntimeOptions } from "./actions";
 import { RuntimeContext } from "./context";
+import { createTemplater, fillAction } from "./variables";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const COMPONENT_BY_TYPE: Record<string, (props: any) => ReactNode> = {
@@ -45,6 +46,8 @@ export interface PopupRendererProps {
   onDismiss?: () => void;
   actions?: Omit<ActionRuntimeOptions, "onDismiss">;
   editing?: boolean;
+  /** Values for the popup's `{{variables}}`, e.g. `{ title: "Summer Sale", user: { firstName: "Asha" } }`. */
+  variables?: Record<string, unknown>;
   onInvalid?: (errors: { path: string; message: string }[]) => void;
 }
 
@@ -55,16 +58,20 @@ export const PopupRenderer = memo(function PopupRenderer({
   onDismiss,
   actions,
   editing = false,
+  variables,
   onInvalid,
 }: PopupRendererProps) {
   const parsed = useMemo(() => parsePopup(popup), [popup]);
 
   const scope = useId();
 
+  const declared = parsed.success ? parsed.data.variables : undefined;
+  const vars = useMemo(() => createTemplater({ values: variables, declared }), [variables, declared]);
+
   const contextValue = useMemo(() => {
     const runtime = createActionRuntime({ ...actions, onDismiss });
-    return { run: (action: Parameters<typeof runtime.run>[0]) => void runtime.run(action), editing, scope };
-  }, [actions, onDismiss, editing, scope]);
+    return { run: (action: Parameters<typeof runtime.run>[0]) => void runtime.run(fillAction(action, vars)), editing, scope, vars };
+  }, [actions, onDismiss, editing, scope, vars]);
 
   const content = useMemo(() => (parsed.success ? parsed.data.children.map(renderNode) : null), [parsed]);
 
