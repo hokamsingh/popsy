@@ -62,7 +62,7 @@ describe("action runtime", () => {
       onError,
       handlers: { boom: () => { throw new Error("nope"); } },
     });
-    await expect(rt.run({ type: "event", name: "boom" })).resolves.toBeUndefined();
+    await expect(rt.run({ type: "event", name: "boom" })).resolves.toBe("failed");
     expect(onError).toHaveBeenCalledWith("nope", expect.anything());
   });
 });

@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, type ElementType } from "react";
+import { useEffect, useMemo, useRef, useState, type ElementType } from "react";
 import { Frame, type NodeBaseProps } from "../frame";
 import { ICONS } from "./icons";
 import { renderRichText } from "@/runtime/richtext";
@@ -91,7 +91,57 @@ export function RichText({ content = "", ...p }: NodeBaseProps & { content?: str
 
 function useActionHandler(action: Action | undefined) {
   const { run, editing } = useRuntime();
-  return editing || !action ? undefined : () => run(action);
+  return editing || !action ? undefined : () => void run(action);
+}
+
+type Progress = "idle" | "busy" | "done" | "failed";
+
+const FAILED_MESSAGE = "Something went wrong. Try again.";
+const FAILED_RESET_MS = 4000;
+
+/**
+ * Runs a button's action and tracks how it went: busy while the app works on it, then a success
+ * or failure message if the action asks for one. "Close the popup" on success dismisses it.
+ */
+function useButtonAction(action: Action | undefined) {
+  const { run, editing } = useRuntime();
+  const [progress, setProgress] = useState<Progress>("idle");
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (progress !== "failed") return;
+    const timer = setTimeout(() => setProgress("idle"), FAILED_RESET_MS);
+    return () => clearTimeout(timer);
+  }, [progress]);
+
+  const onClick =
+    editing || !action
+      ? undefined
+      : async () => {
+          if (progress === "busy") return;
+          setProgress("busy");
+          const status = await run(action);
+          if (!mounted.current) return;
+          const app = action.type === "event" ? action : undefined;
+          if (status === "done" && app?.onSuccess === "close") {
+            void run({ type: "dismiss" });
+            return;
+          }
+          setProgress(status === "failed" ? "failed" : status === "done" && app?.successMessage ? "done" : "idle");
+        };
+
+  const message =
+    progress === "done" && action?.type === "event"
+      ? action.successMessage
+      : progress === "failed"
+        ? (action?.type === "event" && action.errorMessage) || FAILED_MESSAGE
+        : undefined;
+  return { onClick, progress, message };
 }
 
 export function Image({
@@ -250,8 +300,9 @@ export function Button({
   disabled?: boolean;
   action?: Action;
 }) {
-  const onClick = useActionHandler(action);
+  const { onClick, progress, message } = useButtonAction(action);
   const { vars } = useRuntime();
+  const busy = progress === "busy";
   const s = BUTTON_SIZES[size];
   const Glyph = icon ? ICONS[icon] : null;
   const look = BUTTON_LOOKS[variant];
@@ -260,7 +311,7 @@ export function Button({
       {...p}
       as="button"
       kind="button"
-      attrs={{ type: "button", disabled, onClick }}
+      attrs={{ type: "button", disabled: disabled || busy, onClick, "aria-busy": busy || undefined, "data-state": progress === "idle" ? undefined : progress }}
       cssProps={{
         display: fullWidth ? "flex" : "inline-flex",
         width: fullWidth ? "100%" : undefined,
@@ -273,14 +324,15 @@ export function Button({
         "font-family": "inherit",
         "line-height": "1.2",
         "border-radius": "token:radius.md",
-        cursor: disabled ? "not-allowed" : "pointer",
+        cursor: disabled ? "not-allowed" : busy ? "progress" : "pointer",
         opacity: disabled ? "0.5" : undefined,
         "text-decoration": variant === "link" ? "underline" : "none",
         ...look,
       }}
     >
-      {Glyph && iconPosition === "left" ? <Glyph width="1.1em" height="1.1em" aria-hidden /> : null}
-      <span>{vars.text(label)}</span>
+      {busy ? <span className="pp-spinner" aria-hidden /> : null}
+      {Glyph && iconPosition === "left" && !busy ? <Glyph width="1.1em" height="1.1em" aria-hidden /> : null}
+      <span aria-live="polite">{message ?? vars.text(label)}</span>
       {Glyph && iconPosition === "right" ? <Glyph width="1.1em" height="1.1em" aria-hidden /> : null}
     </Frame>
   );

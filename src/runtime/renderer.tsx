@@ -3,7 +3,9 @@ import { memo, useEffect, useId, useMemo, type ReactNode } from "react";
 import { Badge, Button, Icon, Image, RichText, Text, Video } from "@/components/content";
 import { Countdown } from "@/components/content/Countdown";
 import { Container, Divider, Flex, Grid, Layers, Section, Spacer, Stack } from "@/components/layout";
+import { Repeater } from "@/components/layout/Repeater";
 import { PopupShell, type ShellMode } from "@/components/popup/PopupShell";
+import type { Action } from "@/schema/actions";
 import { parsePopup, type PopupNode } from "@/schema/popup";
 import { createActionRuntime, type ActionRuntimeOptions } from "./actions";
 import { RuntimeContext } from "./context";
@@ -15,6 +17,7 @@ const COMPONENT_BY_TYPE: Record<string, (props: any) => ReactNode> = {
   container: Container,
   stack: Stack,
   layers: Layers,
+  repeater: Repeater,
   flex: Flex,
   grid: Grid,
   spacer: Spacer,
@@ -29,7 +32,7 @@ const COMPONENT_BY_TYPE: Record<string, (props: any) => ReactNode> = {
   countdown: Countdown,
 };
 
-function renderNode(node: PopupNode): ReactNode {
+export function renderNode(node: PopupNode): ReactNode {
   const Component = COMPONENT_BY_TYPE[node.type];
   if (!Component) return null;
   return (
@@ -70,7 +73,7 @@ export const PopupRenderer = memo(function PopupRenderer({
 
   const contextValue = useMemo(() => {
     const runtime = createActionRuntime({ ...actions, onDismiss });
-    return { run: (action: Parameters<typeof runtime.run>[0]) => void runtime.run(fillAction(action, vars)), editing, scope, vars };
+    return { run: (action: Action | undefined) => runtime.run(fillAction(action, vars)), perform: runtime.run, editing, scope, vars };
   }, [actions, onDismiss, editing, scope, vars]);
 
   const content = useMemo(() => (parsed.success ? parsed.data.children.map(renderNode) : null), [parsed]);

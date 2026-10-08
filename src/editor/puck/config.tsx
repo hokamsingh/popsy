@@ -1,9 +1,12 @@
 "use client";
-import type { ComponentConfig, Config, Fields } from "@puckeditor/core";
+import { createUsePuck, type ComponentConfig, type Config, type Fields } from "@puckeditor/core";
 import { useMemo, type ReactNode } from "react";
 import { Badge, Button, Icon, Image, RichText, Text, Video } from "@/components/content";
 import { Countdown } from "@/components/content/Countdown";
 import { Container, Divider, Flex, Grid, Layers, Section, Spacer, Stack } from "@/components/layout";
+import { Repeater } from "@/components/layout/Repeater";
+import { renderNode } from "@/runtime/renderer";
+import { nodeFromPuck, type PuckItem } from "../adapters/puck";
 import { PopupShell } from "@/components/popup/PopupShell";
 import { RuntimeContext } from "@/runtime/context";
 import { createTemplater } from "@/runtime/variables";
@@ -11,7 +14,7 @@ import { COMPONENTS } from "@/schema/components";
 import { settingsSchema, type PopupSettings, type PopupVariable } from "@/schema/popup";
 import type { Choice } from "../controls/ChoiceControl";
 import {
-  actionField, blurField, choiceField, colorField, dateTimeField, fontField, iconField, layerOnTopField, lengthField, numberField, popupHeightField, radiusField, styleField, textField, themeFontsField, toggleField, variablesField,
+  actionField, blurField, choiceField, colorField, dateTimeField, fontField, iconField, layerOnTopField, lengthField, numberField, popupHeightField, radiusField, styleField, textField, themeFontsField, toggleField, variablesField, listVariableField,
 } from "./fields";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -175,6 +178,15 @@ const component = (label: string, fields: Fields, render: ComponentConfig["rende
   render,
 });
 
+const usePuckStore = createUsePuck();
+
+/** The editor shows the first copy as the editable template and the rest as previews built from its blocks. */
+function RepeaterInEditor({ children, ...props }: Props) {
+  const template = usePuckStore((s) => s.getItemById(props.id)?.props.children) as PuckItem[] | undefined;
+  const nodes = useMemo(() => (Array.isArray(template) ? template.map(nodeFromPuck) : []), [template]);
+  return <Repeater {...props} id={props.id as string} slot={children} renderCopy={() => nodes.map(renderNode)} />;
+}
+
 const COUNTDOWN_MODE_CHOICES: Choice<string>[] = [
   { value: "date", label: "Until a date and time" },
   { value: "duration", label: "Starts when the popup opens" },
@@ -233,6 +245,19 @@ const components: Record<string, ComponentConfig> = {
     },
     adapt(Layers),
     { height: "320px" },
+  ),
+  Repeater: component(
+    "Repeater (one per list item)",
+    {
+      source: listVariableField("Repeat for each item in", "A list variable from Variables. Inside, use {{item.name}} for the item's values and {{index}} for its position (1, 2, 3…)."),
+      columns: numberField("Items per row", { perDevice: true, min: 1, max: 6, hint: "Try 3 on desktop and 1 on mobile." }),
+      gap,
+      limit: numberField("Show at most", { min: 1, max: 50, hint: "Leave empty to show every item." }),
+      emptyText: textField("Text when the list is empty", { variables: true, hint: "Leave empty to hide the block." }),
+      children: slot,
+    },
+    RepeaterInEditor,
+    { source: "items", columns: { desktop: "3", mobile: "1" }, gap: "16px" },
   ),
   Stack: component(
     "Stack (top to bottom)",
@@ -399,6 +424,9 @@ const components: Record<string, ComponentConfig> = {
 
 const defaultSettings = settingsSchema.parse({});
 
+/** Buttons do nothing while editing. */
+const NO_ACTION = async () => "done" as const;
+
 const rootFields: Fields = {
   name: textField("Popup name", { hint: "Only you see this." }),
   variables: variablesField(),
@@ -432,7 +460,7 @@ export const puckConfig: Config = {
     render: function PopupRoot({ children, ...props }: Props) {
       const declared = props.variables as PopupVariable[] | undefined;
       // Unknown variables stay visible as {{name}} so authors can spot them.
-      const editing = useMemo(() => ({ run: () => {}, editing: true, scope: "", vars: createTemplater({ declared, keepMissing: true }) }), [declared]);
+      const editing = useMemo(() => ({ run: NO_ACTION, perform: NO_ACTION, editing: true, scope: "", vars: createTemplater({ declared, keepMissing: true }) }), [declared]);
       return (
         <RuntimeContext.Provider value={editing}>
           <PopupShell settings={props as PopupSettings} mode="inline">

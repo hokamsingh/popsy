@@ -39,6 +39,34 @@ popup's **Variables** list (editor → popup settings) → blank. Values are alw
 text they are filled in after formatting is parsed, inside URLs they are URL-encoded (unless the whole
 URL is one variable), and every URL is safety-checked again after filling.
 
+## Lists and the Repeater
+
+A variable can be a **List**: give it sample items (JSON) in the editor, and the host sends the
+real list the same way as any other variable. A **Repeater** block repeats its contents once per
+item; inside it, `{{item.title}}` reads the current item and `{{index}}` is its position (1, 2, 3…).
+Anywhere else, `{{items.0.title}}` picks one item. Popsy never knows what the items are.
+
+## App actions that wait for an answer
+
+"Tell your app" sends a named action with data (values can use variables, e.g. `{ "id": "{{item.id}}" }`
+inside a repeater). The host handles it, and may take as long as it needs:
+
+```tsx
+<PopupRenderer
+  popup={popup}
+  variables={{ items: offers }}
+  actions={{ handlers: {
+    avail: async ({ id }) => openCheckout(id),   // resolve: success; reject/throw: failure; return false: backed out
+  } }}
+/>
+```
+
+While the promise is pending the button shows a spinner and is disabled. The designer chooses what
+happens next: close the popup or keep it open, and the messages shown on success or failure.
+
+Optionally, list the actions your app handles so designers pick from a menu instead of typing:
+`NEXT_PUBLIC_POPSY_APP_ACTIONS='[{"name":"avail","label":"Avail offer","fields":["id"]}]'`.
+
 ## Scripts
 
 `npm run dev` · `npm run build` · `npm test` · `npm run lint` · `npm run typecheck`

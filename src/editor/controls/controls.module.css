@@ -447,3 +447,10 @@
   gap: 6px;
   align-items: center;
 }
+
+.variableBlock {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}

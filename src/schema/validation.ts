@@ -36,5 +36,10 @@ export function isSafeCssValue(value: string): boolean {
 
 export const NODE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 
-/** A variable name: letters, digits and underscores, with dots to reach into nested values (`user.firstName`). */
-export const VARIABLE_NAME = /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/;
+/**
+ * A variable name: letters, digits and underscores, with dots to reach into nested values
+ * (`user.firstName`) and numbers to pick a list item (`items.0.price`).
+ */
+export const VARIABLE_NAME = /^[A-Za-z_][A-Za-z0-9_]*(?:\.(?:[A-Za-z_][A-Za-z0-9_]*|\d+))*$/;
+/** A name a popup can declare: no list positions, since it names a whole value. */
+export const DECLARED_VARIABLE_NAME = /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/;
