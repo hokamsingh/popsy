@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { cssValue as css, responsive, TEXT_ALIGNS } from "@/design-system/styles";
 import { actionSchema } from "./actions";
-import { isSafeAssetUrl, isSafeMediaUrl } from "./validation";
+import { DECLARED_VARIABLE_NAME, isSafeAssetUrl, isSafeMediaUrl } from "./validation";
 
 const cssR = responsive(css);
 
@@ -162,6 +162,17 @@ export const countdownProps = z
     message: "choose the date and time to count down to",
   });
 
+export const repeaterProps = z
+  .object({
+    /** The list variable to repeat over; each copy can use `{{item.*}}` and `{{index}}`. */
+    source: z.string().regex(DECLARED_VARIABLE_NAME, "pick a list variable").default("items"),
+    columns: responsive(css).optional(),
+    gap: cssR.optional(),
+    limit: z.number().int().min(1).max(50).optional(),
+    emptyText: z.string().max(200).optional(),
+  })
+  .strict();
+
 export const layersProps = z.object({ height: cssR.default("320px") }).strict();
 
 export const spacerProps = z.object({ height: cssR.default("16px") }).strict();
@@ -191,6 +202,7 @@ export const COMPONENTS: ComponentDef[] = [
   { type: "section", editorKey: "Section", label: "Section", category: "layout", props: emptyProps, container: true },
   { type: "container", editorKey: "Container", label: "Container", category: "layout", props: emptyProps, container: true },
   { type: "layers", editorKey: "Layers", label: "Layers", category: "layout", props: layersProps, container: true },
+  { type: "repeater", editorKey: "Repeater", label: "Repeater", category: "layout", props: repeaterProps, container: true },
   { type: "stack", editorKey: "Stack", label: "Stack", category: "layout", props: stackProps, container: true },
   { type: "flex", editorKey: "Flex", label: "Flex", category: "layout", props: flexProps, container: true },
   { type: "grid", editorKey: "Grid", label: "Grid", category: "layout", props: gridProps, container: true },

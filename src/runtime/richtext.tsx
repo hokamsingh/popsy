@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import { isSafeLinkUrl } from "@/schema/validation";
-import { protectTokens, type Templater } from "./variables";
+import { createTemplater, protectTokens, type Templater } from "./variables";
 
 export type Inline =
   | { kind: "text"; text: string }
@@ -73,7 +73,7 @@ export function parseRichText(src: string): Block[] {
   return blocks;
 }
 
-const PLAIN: Templater = { text: (s) => s, url: (s) => s };
+const PLAIN: Templater = createTemplater({ keepMissing: true });
 
 /** Fills variables after parsing, so a value can only ever be plain text and never adds formatting or links. */
 function renderInline(nodes: Inline[], fill: Templater): ReactNode {
@@ -104,7 +104,7 @@ function renderInline(nodes: Inline[], fill: Templater): ReactNode {
 
 export function renderRichText(src: string, vars: Templater = PLAIN): ReactNode {
   const { masked, restore } = protectTokens(src);
-  const fill: Templater = { text: (s) => vars.text(restore(s)), url: (s) => vars.url(restore(s)) };
+  const fill: Templater = { ...vars, text: (s) => vars.text(restore(s)), url: (s) => vars.url(restore(s)) };
   return parseRichText(masked).map((b, i) =>
     b.kind === "paragraph" ? (
       <p key={i}>{renderInline(b.children, fill)}</p>

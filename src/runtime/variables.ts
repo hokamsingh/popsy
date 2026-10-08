@@ -9,6 +9,8 @@ const WHOLE_TOKEN = new RegExp(`^\\s*\\{\\{\\s*${NAME}\\s*(?:\\|[^{}]*)?\\}\\}\\
 export interface DeclaredVariable {
   name: string;
   defaultValue?: string;
+  /** Sample items for a list variable, used when the host sends no list. */
+  sample?: unknown[];
 }
 
 export interface TemplaterOptions {
@@ -25,16 +27,32 @@ export interface Templater {
   text(template: string): string;
   /** Fills variables into a URL. A URL that is only a variable takes the value as is; otherwise values are URL-encoded. */
   url(template: string): string;
+  /** The items of a list variable: the host's list, else the declared sample, else none. */
+  list(name: string): unknown[];
+  /** A templater that also sees `extra` values, such as the current `item` inside a repeater. */
+  scope(extra: Record<string, unknown>): Templater;
 }
 
 const hasOwn = (target: object, key: string) => Object.prototype.hasOwnProperty.call(target, key);
 
-function lookup(values: Record<string, unknown>, name: string): string | undefined {
+/** Follows a dotted path through plain objects and arrays (`items.0.price`), reading only own properties. */
+function lookupRaw(values: Record<string, unknown>, name: string): unknown {
   let current: unknown = values;
   for (const key of name.split(".")) {
-    if (current === null || typeof current !== "object" || Array.isArray(current) || !hasOwn(current, key)) return undefined;
-    current = (current as Record<string, unknown>)[key];
+    if (Array.isArray(current)) {
+      if (!/^\d+$/.test(key)) return undefined;
+      current = current[Number(key)];
+    } else if (current !== null && typeof current === "object" && hasOwn(current, key)) {
+      current = (current as Record<string, unknown>)[key];
+    } else {
+      return undefined;
+    }
   }
+  return current;
+}
+
+function lookup(values: Record<string, unknown>, name: string): string | undefined {
+  const current = lookupRaw(values, name);
   if (typeof current === "string") return current;
   if (typeof current === "number" && Number.isFinite(current)) return String(current);
   if (typeof current === "boolean") return String(current);
@@ -50,12 +68,13 @@ export function variablesIn(template: string): string[] {
 
 export function createTemplater({ values = {}, declared = [], keepMissing = false }: TemplaterOptions = {}): Templater {
   const defaults = new Map(declared.map((v) => [v.name, v.defaultValue]));
+  const samples: Record<string, unknown> = Object.fromEntries(declared.filter((v) => Array.isArray(v.sample)).map((v) => [v.name, v.sample]));
   const resolve = (name: string, fallback: string | undefined): string | undefined => {
     const value = lookup(values, name);
     if (value) return value;
     const inline = fallback?.trim();
     if (inline) return inline;
-    return defaults.get(name) || undefined;
+    return defaults.get(name) || lookup(samples, name) || undefined;
   };
   const fill = (template: string, encode: (value: string) => string) =>
     hasVariables(template)
@@ -68,6 +87,13 @@ export function createTemplater({ values = {}, declared = [], keepMissing = fals
   return {
     text: (template) => fill(template, (value) => value),
     url: (template) => (WHOLE_TOKEN.test(template) ? fill(template.trim(), (value) => value.trim()) : fill(template, encodeURIComponent)),
+    list: (name) => {
+      const value = lookupRaw(values, name);
+      if (Array.isArray(value)) return value;
+      const sample = samples[name];
+      return Array.isArray(sample) ? sample : [];
+    },
+    scope: (extra) => createTemplater({ values: { ...values, ...extra }, declared, keepMissing }),
   };
 }
 

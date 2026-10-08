@@ -1,7 +1,13 @@
 import type { Action } from "@/schema/actions";
 import { isSafeLinkUrl } from "@/schema/validation";
 
-export type EventHandler = (payload: Record<string, unknown> | undefined) => void | Promise<void>;
+/**
+ * Handles an app action. Return (or resolve) `false` when the person backed out, e.g. closed a checkout;
+ * throw (or reject) when it failed. Anything else counts as success.
+ */
+export type EventHandler = (payload: Record<string, unknown> | undefined) => unknown;
+
+export type ActionStatus = "done" | "cancelled" | "failed";
 
 export interface ActionRuntimeOptions {
   onDismiss?: () => void;
@@ -13,7 +19,7 @@ export interface ActionRuntimeOptions {
 }
 
 export interface ActionRuntime {
-  run(action: Action | undefined): Promise<void>;
+  run(action: Action | undefined): Promise<ActionStatus>;
   register(name: string, handler: EventHandler): () => void;
 }
 
@@ -34,31 +40,36 @@ export function createActionRuntime(opts: ActionRuntimeOptions = {}): ActionRunt
       };
     },
     async run(action) {
-      if (!action) return;
-      const fail = (message: string) => opts.onError?.(message, action);
+      if (!action) return "done";
+      const fail = (message: string): ActionStatus => {
+        opts.onError?.(message, action);
+        return "failed";
+      };
       try {
         switch (action.type) {
           case "dismiss":
             opts.onDismiss?.();
-            return;
+            return "done";
           case "navigate":
             if (!isSafeLinkUrl(action.to)) return fail(`blocked unsafe navigate target: ${action.to}`);
             (opts.navigate ?? defaultNavigate)(action.to);
-            return;
+            return "done";
           case "external_url":
             if (!isSafeLinkUrl(action.url)) return fail(`blocked unsafe URL: ${action.url}`);
             (opts.openUrl ?? defaultOpenUrl)(action.url, action.newTab ?? true);
-            return;
+            return "done";
           case "event": {
             const handler = handlers.get(action.name);
-            if (handler) await handler(action.payload);
-            else if (opts.onEvent) opts.onEvent(action.name, action.payload);
-            else fail(`no handler registered for event "${action.name}"`);
-            return;
+            if (handler) return (await handler(action.payload)) === false ? "cancelled" : "done";
+            if (opts.onEvent) {
+              opts.onEvent(action.name, action.payload);
+              return "done";
+            }
+            return fail(`no handler registered for event "${action.name}"`);
           }
         }
       } catch (err) {
-        fail(err instanceof Error ? err.message : String(err));
+        return fail(err instanceof Error ? err.message : String(err));
       }
     },
   };
