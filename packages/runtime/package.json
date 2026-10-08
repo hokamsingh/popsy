@@ -1,5 +1,5 @@
 {
-  "name": "@popsy/runtime",
+  "name": "@popsy-render/runtime",
   "version": "0.1.0",
   "description": "Render Popsy popups (canonical popup JSON) in React 18/19 apps, including Next.js.",
   "license": "UNLICENSED",

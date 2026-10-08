@@ -1,5 +1,5 @@
 /**
- * @popsy/runtime: render Popsy popups in any React 18/19 app (Next.js App Router included).
+ * @popsy-render/runtime: render Popsy popups in any React 18/19 app (Next.js App Router included).
  * The editor is not part of this entry point.
  */
 export { PopupRenderer, type PopupRendererProps } from "./renderer";
